@@ -31,6 +31,7 @@
 #include "1541job.h"
 #include "Display.h"
 #include "Prefs.h"
+#include "redpill.h"
 
 #if defined(__unix) && !defined(__svgalib__)
 #include "CmdPipe.h"
@@ -64,13 +65,13 @@ C64::C64()
 	TheDisplay = new C64Display(this);
 
 	// Allocate RAM/ROM memory
-	RAM = new uint8[C64_RAM_SIZE];
-	Basic = new uint8[BASIC_ROM_SIZE];
-	Kernal = new uint8[KERNAL_ROM_SIZE];
-	Char = new uint8[CHAR_ROM_SIZE];
-	Color = new uint8[COLOR_RAM_SIZE];
-	RAM1541 = new uint8[DRIVE_RAM_SIZE];
-	ROM1541 = new uint8[DRIVE_ROM_SIZE];
+	RAM = new("C64_RAM") uint8[C64_RAM_SIZE];
+	Basic = new("C64_ROM_BASIC") uint8[BASIC_ROM_SIZE];
+	Kernal = new("C64_ROM_KERNAL") uint8[KERNAL_ROM_SIZE];
+	Char = new("C64_ROM_CHAR") uint8[CHAR_ROM_SIZE];
+	Color = new("C64_COLOR_RAM") uint8[COLOR_RAM_SIZE];
+	RAM1541 = new("C64_1541_RAM") uint8[DRIVE_RAM_SIZE];
+	ROM1541 = new("C64_1541_ROM") uint8[DRIVE_ROM_SIZE];
 
 	// Create the chips
 	TheCPU = new MOS6510(this, RAM, Basic, Kernal, Char, Color);
@@ -132,13 +133,13 @@ C64::~C64()
 	delete TheCPU;
 	delete TheDisplay;
 
-	delete[] RAM;
-	delete[] Basic;
-	delete[] Kernal;
-	delete[] Char;
-	delete[] Color;
-	delete[] RAM1541;
-	delete[] ROM1541;
+	operator delete[] (RAM, "C64_RAM");
+	operator delete[] (Basic, "C64_ROM_BASIC");
+	operator delete[] (Kernal, "C64_ROM_KERNAL");
+	operator delete[] (Char, "C64_ROM_CHAR");
+	operator delete[] (Color, "C64_COLOR_RAM");
+	operator delete[] (RAM1541, "C64_1541_RAM");
+	operator delete[] (ROM1541, "C64_1541_ROM");
 
 	c64_dtor();
 }
