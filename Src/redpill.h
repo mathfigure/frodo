@@ -22,7 +22,7 @@
 #ifndef _REDPILL_H
 #define _REDPILL_H
 
-void *operator new[](std::size_t size, const char* sid) throw (std::bad_alloc);
+void *operator new[](std::size_t size, const char* sid);
 void  operator delete[](void *p, const char* sid);
 
 #endif

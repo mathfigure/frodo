@@ -64,7 +64,7 @@ void delete_shared_mem(const char *sid)
 }
 
 
-void *operator new[](std::size_t size, const char* sid) throw (std::bad_alloc)
+void *operator new[](std::size_t size, const char* sid)
 {
 	return new_shared_mem(size, sid);
 }
