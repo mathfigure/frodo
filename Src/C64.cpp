@@ -712,7 +712,7 @@ bool C64::LoadSnapshot(char *filename)
 #endif
 
 #ifdef __unix
-# if defined(QTOPIA) or defined(MAEMO)
+# if defined(QTOPIA) || defined(MAEMO)
 #  include "C64_Embedded.h"
 # else
 #  include "C64_x.h"

@@ -18,8 +18,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "sysdeps.h"
 #include <sys/mman.h>
+#include "sysdeps.h"
 #include "redpill.h"
 
 #define WHITE "\x1b[1;37m"
@@ -36,11 +36,11 @@ void quit(const char *msg)
 }
 
 
-uint8* new_shared_mem(int size, const char *sid)
+uint8* shm_new(int size, const char *sid)
 {
 	printf(">Allocating shared memory: " WHITE "%s" NOCOLOR " = %d bytes, ",sid,size);
 
-	int fd = shm_open(sid, O_CREAT|O_RDWR, 0666);
+	int fd = shm_open(sid, O_CREAT|O_RDWR, S_IRUSR|S_IWUSR);
 	if(fd == -1)
 		quit("shm_open() failed!");
 	ftruncate(fd, size);
@@ -54,7 +54,7 @@ uint8* new_shared_mem(int size, const char *sid)
 }
 
 
-void delete_shared_mem(const char *sid)
+void shm_delete(const char *sid)
 {
 	printf(">Releasing shared memory: %s, ",sid);
 	if(shm_unlink(sid) == -1)
@@ -66,11 +66,11 @@ void delete_shared_mem(const char *sid)
 
 void *operator new[](std::size_t size, const char* sid)
 {
-	return new_shared_mem(size, sid);
+	return shm_new(size, sid);
 }
 
 
 void operator delete[](void *p, const char* sid)
 {
-	delete_shared_mem(sid);
+	shm_delete(sid);
 }

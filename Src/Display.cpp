@@ -89,7 +89,7 @@ void C64Display::UpdateLEDs(int l0, int l1, int l2, int l3)
 #elif defined(AMIGA)
 #include "Display_Amiga.h"
 #elif defined(HAVE_SDL)
-# if defined(QTOPIA) or defined(MAEMO)
+# if defined(QTOPIA) || defined(MAEMO)
 #  include "Display_EmbeddedSDL.h"
 # else
 #  include "Display_SDL.h"
