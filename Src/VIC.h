@@ -22,17 +22,6 @@
 #define _VIC_H
 
 
-// Define this if you want global variables instead of member variables
-#if defined(__i386) || defined(mc68000) || defined(__MC68K__)
-#define GLOBAL_VARS
-#endif
-
-// Define this if you have a processor that can do unaligned accesses quickly
-#if defined(__i386) || defined(mc68000) || defined(__MC68K__)
-#define CAN_ACCESS_UNALIGNED
-#endif
-
-
 // Total number of raster lines (PAL)
 const unsigned TOTAL_RASTERS = 0x138;
 
@@ -52,23 +41,16 @@ public:
 
 	uint8 ReadRegister(uint16 adr);
 	void WriteRegister(uint16 adr, uint8 byte);
-#ifdef FRODO_SC
 	bool EmulateCycle(void);
-#else
-	int EmulateLine(void);
-#endif
 	void ChangedVA(uint16 new_va);	// CIA VA14/15 has changed
 	void TriggerLightpen(void);		// Trigger lightpen interrupt
 	void ReInitColors(void);
 	void GetState(MOS6569State *vd);
 	void SetState(MOS6569State *vd);
 
-#ifdef FRODO_SC
 	uint8 LastVICByte;
-#endif
 
 private:
-#ifndef GLOBAL_VARS
 	void vblank(void);
 	void raster_irq(void);
 
@@ -101,9 +83,6 @@ private:
 	uint8 matrix_line[40];		// Buffer for video line, read in Bad Lines
 	uint8 color_line[40];		// Buffer for color line, read in Bad Lines
 
-#ifdef __POWERPC__
-	double chunky_tmp[0x180/8];	// Temporary line buffer for speedup
-#endif
 	uint8 *chunky_line_start;	// Pointer to start of current line in bitmap buffer
 	int xmod;					// Number of bytes per row
 
@@ -126,9 +105,6 @@ private:
 	long pad0;	// Keep buffers long-aligned
 	uint8 spr_coll_buf[0x180];	// Buffer for sprite-sprite collisions and priorities
 	uint8 fore_mask_buf[0x180/8];	// Foreground mask for sprite-graphics collisions and priorities
-#ifndef CAN_ACCESS_UNALIGNED
-	uint8 text_chunky_buf[40*8];	// Line graphics buffer
-#endif
 
 	bool display_state;			// true: Display state, false: Idle state
 	bool border_on;				// Flag: Upper/lower border on (Frodo SC: Main border flipflop)
@@ -136,7 +112,6 @@ private:
 	uint8 bad_lines_enabled;	// Flag: Bad Lines enabled for this frame
 	bool lp_triggered;			// Flag: Lightpen was triggered in this frame
 
-#ifdef FRODO_SC
 	uint8 read_byte(uint16 adr);
 	void matrix_access(void);
 	void graphics_access(void);
@@ -177,29 +152,6 @@ private:
 	uint8 spr_draw_data[8][4];	// Sprite data for drawing
 
 	uint32 first_ba_cycle;		// Cycle when BA first went low
-#else
-	uint8 *get_physical(uint16 adr);
-	void make_mc_table(void);
-	void el_std_text(uint8 *p, uint8 *q, uint8 *r);
-	void el_mc_text(uint8 *p, uint8 *q, uint8 *r);
-	void el_std_bitmap(uint8 *p, uint8 *q, uint8 *r);
-	void el_mc_bitmap(uint8 *p, uint8 *q, uint8 *r);
-	void el_ecm_text(uint8 *p, uint8 *q, uint8 *r);
-	void el_std_idle(uint8 *p, uint8 *r);
-	void el_mc_idle(uint8 *p, uint8 *r);
-	void el_sprites(uint8 *chunky_ptr);
-	int el_update_mc(int raster);
-
-	uint16 mc_color_lookup[4];
-
-	bool border_40_col;			// Flag: 40 column border
-	uint8 sprite_on;			// 8 flags: Sprite display/DMA active
-
-	uint8 *matrix_base;			// Video matrix base
-	uint8 *char_base;			// Character generator base
-	uint8 *bitmap_base;			// Bitmap base
-#endif
-#endif
 };
 
 

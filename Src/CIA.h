@@ -37,12 +37,8 @@ public:
 	void Reset(void);
 	void GetState(MOS6526State *cs);
 	void SetState(MOS6526State *cs);
-#ifdef FRODO_SC
 	void CheckIRQs(void);
 	void EmulateCycle(void);
-#else
-	void EmulateLine(int cycles);
-#endif
 	void CountTOD(void);
 	virtual void TriggerInterrupt(int bit)=0;
 
@@ -66,7 +62,6 @@ protected:
 		 tb_cnt_phi2,	// Flag: Timer B is counting Phi 2
 	     tb_cnt_ta;		// Flag: Timer B is counting underflows of Timer A
 
-#ifdef FRODO_SC
 	uint8 timer_on_pb(uint8 prb);
 
 	bool ta_irq_next_cycle,		// Flag: Trigger TA IRQ in next cycle
@@ -77,7 +72,6 @@ protected:
 		 tb_toggle;				// TB output to PB7 toggle state
 	char ta_state, tb_state;	// Timer A/B states
 	uint8 new_cra, new_crb;		// New values for CRA/CRB
-#endif
 };
 
 
@@ -155,7 +149,6 @@ struct MOS6526State {
  *  Emulate CIA for one cycle/raster line
  */
 
-#ifdef FRODO_SC
 inline void MOS6526::CheckIRQs(void)
 {
 	// Trigger pending interrupts
@@ -168,47 +161,5 @@ inline void MOS6526::CheckIRQs(void)
 		TriggerInterrupt(2);
 	}
 }
-#else
-inline void MOS6526::EmulateLine(int cycles)
-{
-	unsigned long tmp;
-
-	// Timer A
-	if (ta_cnt_phi2) {
-		ta = tmp = ta - cycles;		// Decrement timer
-
-		if (tmp > 0xffff) {			// Underflow?
-			ta = latcha;			// Reload timer
-
-			if (cra & 8) {			// One-shot?
-				cra &= 0xfe;
-				ta_cnt_phi2 = false;
-			}
-			TriggerInterrupt(1);
-			if (tb_cnt_ta) {		// Timer B counting underflows of Timer A?
-				tb = tmp = tb - 1;	// tmp = --tb doesn't work
-				if (tmp > 0xffff) goto tb_underflow;
-			}
-		}
-	}
-
-	// Timer B
-	if (tb_cnt_phi2) {
-		tb = tmp = tb - cycles;		// Decrement timer
-
-		if (tmp > 0xffff) {			// Underflow?
-tb_underflow:
-			tb = latchb;
-
-			if (crb & 8) {			// One-shot?
-				crb &= 0xfe;
-				tb_cnt_phi2 = false;
-				tb_cnt_ta = false;
-			}
-			TriggerInterrupt(2);
-		}
-	}
-}
-#endif
 
 #endif

@@ -29,7 +29,7 @@
 #include "resource.h"
 
 #define NAME "Frodo"
-#define TITLE (IsFrodoSC ? "FrodoSC" : "Frodo")
+#define TITLE "FrodoSC"
 
 #ifdef DEBUG
 
@@ -445,10 +445,7 @@ void C64Display::Speedometer(int speed)
 	SetBkMode(hdc, TRANSPARENT);
 	SetTextColor(hdc, (COLORREF) GetSysColor(COLOR_MENUTEXT));
 	char str[128];
-	if (IsFrodoSC)
-		sprintf(str, "%d%%", speed_index);
-	else
-		sprintf(str, "%d%%", speed_index);
+	sprintf(str, "%d%%", speed_index);
 	int x = rc.left + 4;
 	int y = rc.top + 2;
 	TextOut(hdc, x, y, str, strlen(str));
@@ -2295,10 +2292,7 @@ void C64Display::WindowTitle()
 	if (waiting)
 		info = "PAUSED";
 	else if (!ThePrefs.ShowLEDs && speed_index != 0) {
-		if (IsFrodoSC)
-			sprintf(tmp, "%.1f%%", speed_index);
-		else
-			sprintf(tmp, "%.0f%%", speed_index);
+		sprintf(tmp, "%.1f%%", speed_index);
 		info = tmp;
 	}
 	const char *sep1 = info ? " (" : "";

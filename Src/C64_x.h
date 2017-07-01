@@ -238,7 +238,6 @@ void C64::VBlank(bool draw_frame)
 
 void C64::thread_func(void)
 {
-#ifdef FRODO_SC
 	while (!quit_thyself) {
 
 		// The order of calls is important here
@@ -256,36 +255,6 @@ void C64::thread_func(void)
 				TheCPU1541->EmulateCycle();
 		}
 		CycleCounter++;
-#else
-	while (!quit_thyself) {
-
-		// The order of calls is important here
-		int cycles = TheVIC->EmulateLine();
-		TheSID->EmulateLine();
-#if !PRECISE_CIA_CYCLES
-		TheCIA1->EmulateLine(ThePrefs.CIACycles);
-		TheCIA2->EmulateLine(ThePrefs.CIACycles);
-#endif
-
-		if (ThePrefs.Emul1541Proc) {
-			int cycles_1541 = ThePrefs.FloppyCycles;
-			TheCPU1541->CountVIATimers(cycles_1541);
-
-			if (!TheCPU1541->Idle) {
-				// 1541 processor active, alternately execute
-				//  6502 and 6510 instructions until both have
-				//  used up their cycles
-				while (cycles >= 0 || cycles_1541 >= 0)
-					if (cycles > cycles_1541)
-						cycles -= TheCPU->EmulateLine(1);
-					else
-						cycles_1541 -= TheCPU1541->EmulateLine(1);
-			} else
-				TheCPU->EmulateLine(cycles);
-		} else
-			// 1541 processor disabled, only emulate 6510
-			TheCPU->EmulateLine(cycles);
-#endif
 	}
 }
 

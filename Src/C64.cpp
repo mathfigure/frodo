@@ -33,18 +33,6 @@
 #include "Prefs.h"
 #include "redpill.h"
 
-#if defined(__unix) && !defined(__svgalib__)
-#include "CmdPipe.h"
-#endif
-
-
-#ifdef FRODO_SC
-bool IsFrodoSC = true;
-#else
-bool IsFrodoSC = false;
-#endif
-
-
 /*
  *  Constructor: Allocate objects and memory
  */
@@ -183,21 +171,8 @@ void C64::NewPrefs(Prefs *prefs)
 
 	TheDisplay->NewPrefs(prefs);
 
-#ifdef __riscos__
-	// Changed order of calls. If 1541 mode hasn't changed the order is insignificant.
-	if (prefs->Emul1541Proc) {
-		// New prefs have 1541 enabled ==> if old prefs had disabled free drives FIRST
-		TheIEC->NewPrefs(prefs);
-		TheJob1541->NewPrefs(prefs);
-	} else {
-		// New prefs has 1541 disabled ==> if old prefs had enabled free job FIRST
-		TheJob1541->NewPrefs(prefs);
-		TheIEC->NewPrefs(prefs);
-	}
-#else
 	TheIEC->NewPrefs(prefs);
 	TheJob1541->NewPrefs(prefs);
-#endif
 
 	TheREU->NewPrefs(prefs);
 	TheSID->NewPrefs(prefs);
@@ -549,7 +524,6 @@ void C64::SaveSnapshot(char *filename)
 	SaveSIDState(f);
 	SaveCIAState(f);
 
-#ifdef FRODO_SC
 	delay = 0;
 	do {
 		if ((stat = SaveCPUState(f)) == -1) {	// -1 -> Instruction not finished yet
@@ -558,14 +532,9 @@ void C64::SaveSnapshot(char *filename)
 		}
 	} while (stat == -1);
 	fputc(delay, f);	// Number of cycles the saved CPUC64 lags behind the previous chips
-#else
-	SaveCPUState(f);
-	fputc(0, f);		// No delay
-#endif
 
 	if (ThePrefs.Emul1541Proc) {
 		fwrite(ThePrefs.DrivePath[0], 256, 1, f);
-#ifdef FRODO_SC
 		delay = 0;
 		do {
 			if ((stat = Save1541State(f)) == -1) {
@@ -574,17 +543,10 @@ void C64::SaveSnapshot(char *filename)
 			}
 		} while (stat == -1);
 		fputc(delay, f);
-#else
-		Save1541State(f);
-		fputc(0, f);	// No delay
-#endif
 		Save1541JobState(f);
 	}
 	fclose(f);
 
-#ifdef __riscos__
-	TheWIMP->SnapshotSaved(true);
-#endif
 }
 
 
@@ -611,9 +573,6 @@ bool C64::LoadSnapshot(char *filename)
 		if (b != NULL) {
 			uint8 flags;
 			bool error = false;
-#ifndef FRODO_SC
-			long vicptr;	// File offset of VIC data
-#endif
 
 			while (c != 10)
 				c = fgetc(f);	// Shouldn't be necessary
@@ -623,9 +582,6 @@ bool C64::LoadSnapshot(char *filename)
 				return false;
 			}
 			flags = fgetc(f);
-#ifndef FRODO_SC
-			vicptr = ftell(f);
-#endif
 
 			error |= !LoadVICState(f);
 			error |= !LoadSIDState(f);
@@ -633,14 +589,12 @@ bool C64::LoadSnapshot(char *filename)
 			error |= !LoadCPUState(f);
 
 			delay = fgetc(f);	// Number of cycles the 6510 is ahead of the previous chips
-#ifdef FRODO_SC
 			// Make the other chips "catch up" with the 6510
 			for (i=0; i<delay; i++) {
 				TheVIC->EmulateCycle();
 				TheCIA1->EmulateCycle();
 				TheCIA2->EmulateCycle();
 			}
-#endif
 			if ((flags & SNAPSHOT_1541) != 0) {
 				Prefs *prefs = new Prefs(ThePrefs);
 	
@@ -655,7 +609,6 @@ bool C64::LoadSnapshot(char *filename)
 				error |= !Load1541State(f);
 	
 				delay = fgetc(f);	// Number of cycles the 6502 is ahead of the previous chips
-#ifdef FRODO_SC
 				// Make the other chips "catch up" with the 6502
 				for (i=0; i<delay; i++) {
 					TheVIC->EmulateCycle();
@@ -663,26 +616,15 @@ bool C64::LoadSnapshot(char *filename)
 					TheCIA2->EmulateCycle();
 					TheCPU->EmulateCycle();
 				}
-#endif
 				Load1541JobState(f);
-#ifdef __riscos__
-				TheWIMP->ThePrefsToWindow();
-#endif
 			} else if (ThePrefs.Emul1541Proc) {	// No emulation in snapshot, but currently active?
 				Prefs *prefs = new Prefs(ThePrefs);
 				prefs->Emul1541Proc = false;
 				NewPrefs(prefs);
 				ThePrefs = *prefs;
 				delete prefs;
-#ifdef __riscos__
-				TheWIMP->ThePrefsToWindow();
-#endif
 			}
 
-#ifndef FRODO_SC
-			fseek(f, vicptr, SEEK_SET);
-			LoadVICState(f);	// Load VIC data twice in SL (is REALLY necessary sometimes!)
-#endif
 			fclose(f);
 	
 			if (error) {
@@ -703,30 +645,14 @@ bool C64::LoadSnapshot(char *filename)
 }
 
 
-#ifdef __BEOS__
-#include "C64_Be.h"
-#endif
 
-#ifdef AMIGA
-#include "C64_Amiga.h"
-#endif
 
 #ifdef __unix
-# if defined(QTOPIA) || defined(MAEMO)
-#  include "C64_Embedded.h"
-# else
 #  include "C64_x.h"
-# endif
 #endif
 
-#ifdef __mac__
-#include "C64_mac.h"
-#endif
 
 #ifdef WIN32
 #include "C64_WIN32.h"
 #endif
 
-#ifdef __riscos__
-#include "C64_Acorn.h"
-#endif

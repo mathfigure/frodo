@@ -24,24 +24,6 @@
 #include "C64.h"
 
 
-// Set this to 1 if the 6502 PC should be represented by a real pointer
-#ifndef FRODO_SC
-#ifndef PC_IS_POINTER
-#define PC_IS_POINTER 1
-#endif
-#endif
-
-// Set this to 1 for more precise CPU cycle calculation
-#ifndef PRECISE_CPU_CYCLES
-#define PRECISE_CPU_CYCLES 0
-#endif
-
-// Set this to 1 for instruction-aligned CIA emulation
-#ifndef PRECISE_CIA_CYCLES
-#define PRECISE_CIA_CYCLES 0
-#endif
-
-
 // Interrupt types
 enum {
 	INT_VICIRQ,
@@ -65,11 +47,7 @@ class MOS6510 {
 public:
 	MOS6510(C64 *c64, uint8 *Ram, uint8 *Basic, uint8 *Kernal, uint8 *Char, uint8 *Color);
 
-#ifdef FRODO_SC
 	void EmulateCycle(void);			// Emulate one clock cycle
-#else
-	int EmulateLine(int cycles_left);	// Emulate until cycles_left underflows
-#endif
 	void Reset(void);
 	void AsyncReset(void);				// Reset the CPU asynchronously
 	void AsyncNMI(void);				// Raise NMI asynchronously (NMI pulse)
@@ -96,9 +74,7 @@ public:
 	REU *TheREU;		// Pointer to REU
 	IEC *TheIEC;		// Pointer to drive array
 
-#ifdef FRODO_SC
 	bool BALow;			// BA line for Frodo SC
-#endif
 
 private:
 	uint8 read_byte(uint16 adr);
@@ -135,13 +111,8 @@ private:
 	bool v_flag, d_flag, i_flag, c_flag;
 	uint8 a, x, y, sp;
 
-#if PC_IS_POINTER
-	uint8 *pc, *pc_base;
-#else
 	uint16 pc;
-#endif
 
-#ifdef FRODO_SC
 	uint32 first_irq_cycle, first_nmi_cycle;
 
 	enum {
@@ -155,9 +126,6 @@ private:
 	uint16 ar, ar2;			// Address registers
 	uint8 rdbuf;			// Data buffer for RMW instructions
 	uint8 ddr, pr, pr_out;	// Processor port
-#else
-	int	borrowed_cycles;	// Borrowed cycles from next line
-#endif
 
 	bool basic_in, kernal_in, char_in, io_in;
 	uint8 dfff_byte;
@@ -177,7 +145,6 @@ struct MOS6510State {
 
 
 // Interrupt functions
-#ifdef FRODO_SC
 inline void MOS6510::TriggerVICIRQ(void)
 {
 	if (!(interrupt.intr[INT_VICIRQ] || interrupt.intr[INT_CIAIRQ]))
@@ -200,25 +167,6 @@ inline void MOS6510::TriggerNMI(void)
 		first_nmi_cycle = the_c64->CycleCounter;
 	}
 }
-#else
-inline void MOS6510::TriggerVICIRQ(void)
-{
-	interrupt.intr[INT_VICIRQ] = true;
-}
-
-inline void MOS6510::TriggerCIAIRQ(void)
-{
-	interrupt.intr[INT_CIAIRQ] = true;
-}
-
-inline void MOS6510::TriggerNMI(void)
-{
-	if (!nmi_state) {
-		nmi_state = true;
-		interrupt.intr[INT_NMI] = true;
-	}
-}
-#endif
 inline void MOS6510::ClearVICIRQ(void)
 {
 	interrupt.intr[INT_VICIRQ] = false;

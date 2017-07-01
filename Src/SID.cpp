@@ -31,56 +31,11 @@
 #include "SID.h"
 #include "Prefs.h"
 
-#ifdef __BEOS__
-#include <media/SoundPlayer.h>
-#endif
-
-#ifdef AMIGA
-#include <exec/types.h>
-#include <utility/hooks.h>
-#include <devices/ahi.h>
-#define USE_FIXPOINT_MATHS
-#define FIXPOINT_PREC 16	// number of fractional bits used in fixpoint representation
-#define PRECOMPUTE_RESONANCE
-#define ldSINTAB 9			// size of sinus table (0 to 90 degrees)
-#endif
-
-#ifdef SUN
-extern "C" {
-	#include <sys/audioio.h>
-}
-#endif
-
-#ifdef __hpux
-extern "C" {
-	#include <sys/audio.h>
-}
-#endif
-
-#ifdef __mac__
-#include <Sound.h>
-#define M_PI 3.14159265358979323846
-#endif
 
 #ifdef WIN32
 class DigitalPlayer;
 #endif
 
-#ifdef __riscos__
-#include "ROLib.h"
-# ifndef M_PI
-# define M_PI 3.14159265358979323846
-# endif
-#define USE_FIXPOINT_MATHS
-#define FIXPOINT_PREC 16	// number of fractional bits used in fixpoint representation
-#define PRECOMPUTE_RESONANCE
-#define ldSINTAB 9			// size of sinus table (0 to 90 degrees)
-#endif
-
-
-#ifdef USE_FIXPOINT_MATHS
-#include "FixPoint.h"
-#endif
 
 
 /*
@@ -276,11 +231,7 @@ void MOS6581::SetState(MOS6581State *ss)
  **  Renderer for digital SID emulation (SIDTYPE_DIGITAL)
  **/
 
-#if defined(AMIGA) || defined(__riscos__)
-const uint32 SAMPLE_FREQ = 22050;	// Sample output frequency in Hz
-#else
 const uint32 SAMPLE_FREQ = 44100;	// Sample output frequency in Hz
-#endif
 const uint32 SID_FREQ = 985248;		// SID frequency in Hz
 const uint32 CALC_FREQ = 50;			// Frequency at which calc_buffer is called in Hz (should be 50Hz)
 const uint32 SID_CYCLES = SID_FREQ/SAMPLE_FREQ;	// # of SID clocks per sample frame
@@ -367,11 +318,7 @@ public:
 private:
 	void init_sound(void);
 	void calc_filter(void);
-#ifdef __riscos__
-	void calc_buffer(uint8 *buf, long count);
-#else
 	void calc_buffer(int16 *buf, long count);
-#endif
 
 	C64 *the_c64;					// Pointer to C64 object
 
@@ -392,50 +339,14 @@ private:
 	uint8 f_type;					// Filter type
 	uint8 f_freq;					// SID filter frequency (upper 8 bits)
 	uint8 f_res;					// Filter resonance (0..15)
-#ifdef USE_FIXPOINT_MATHS
-	FixPoint f_ampl;
-	FixPoint d1, d2, g1, g2;
-	int32 xn1, xn2, yn1, yn2;		// can become very large
-	FixPoint sidquot;
-#ifdef PRECOMPUTE_RESONANCE
-	FixPoint resonanceLP[256];
-	FixPoint resonanceHP[256];
-#endif
-#else
 	float f_ampl;					// IIR filter input attenuation
 	float d1, d2, g1, g2;			// IIR filter coefficients
 	float xn1, xn2, yn1, yn2;		// IIR filter previous input/output signal
-#ifdef PRECOMPUTE_RESONANCE
-	float resonanceLP[256];			// shortcut for calc_filter
-	float resonanceHP[256];
-#endif
-#endif
 
 	uint8 sample_buf[SAMPLE_BUF_SIZE]; // Buffer for sampled voice
 	int sample_in_ptr;				// Index in sample_buf for writing
 
-#ifdef __BEOS__
-	static void buffer_proc(void *cookie, void *buffer, size_t size, const media_raw_audio_format &format);
-	BSoundPlayer *the_player;		// Pointer to sound player
-	bool player_stopped;			// Flag: player stopped
-#endif
 
-#ifdef AMIGA
-	static void sub_invoc(void);	// Sound sub-process
-	void sub_func(void);
-	struct Process *sound_process;
-	int quit_sig, pause_sig,
-		resume_sig, ahi_sig;		// Sub-process signals
-	struct Task *main_task;			// Main task
-	int main_sig;					// Main task signals
-	static ULONG sound_func(void);	// AHI callback
-	struct MsgPort *ahi_port;		// Port and IORequest for AHI
-	struct AHIRequest *ahi_io;
-	struct AHIAudioCtrl *ahi_ctrl;	// AHI control structure
-	struct AHISampleInfo sample[2];	// SampleInfos for double buffering
-	struct Hook sf_hook;			// Hook for callback function
-	int play_buf;					// Number of buffer currently playing
-#endif
 
 
 #ifdef HAVE_SDL
@@ -447,33 +358,11 @@ private:
 	int16 *sound_buffer;
 # endif
 
-# ifdef SUN
-	int fd;
-	audio_info status;
-	uint_t sent_samples,delta_samples;
-	int16 *sound_calc_buf;
-# endif
 
-# ifdef __hpux
-	int fd;
-	audio_status status;
-	int16 *sound_calc_buf;
-	int linecnt;
-# endif
 
 #endif // ndef HAVE_SDL
 
 
-#ifdef __mac__
-	SndChannelPtr chan1;
-	SndDoubleBufferHeader myDblHeader;
-	SndDoubleBufferPtr sampleBuffer1, sampleBuffer2;
-	SCStatus myStatus;
-	short sndbufsize;
-	OSErr err;
-
-	static void doubleBackProc(SndChannelPtr chan, SndDoubleBufferPtr doubleBuffer);
-#endif
 
 #ifdef WIN32
 public:
@@ -493,10 +382,6 @@ private:
 	int lead_pos;
 #endif
 
-#ifdef __riscos__
-	int linecnt, sndbufsize;
-	uint8 *sound_buffer;
-#endif
 };
 
 // Static data members
@@ -842,24 +727,6 @@ DigitalRenderer::DigitalRenderer(C64 *c64) : the_c64(c64)
 		TriTable[0x1fff-i] = (i << 4) | (i >> 8);
 	}
 
-#ifdef PRECOMPUTE_RESONANCE
-#ifdef USE_FIXPOINT_MATHS
-	// slow floating point doesn't matter much on startup!
-	for (int i=0; i<256; i++) {
-	  resonanceLP[i] = FixNo(CALC_RESONANCE_LP(i));
-	  resonanceHP[i] = FixNo(CALC_RESONANCE_HP(i));
-	}
-	// Pre-compute the quotient. No problem since int-part is small enough
-	sidquot = (int32)((((double)SID_FREQ)*65536) / SAMPLE_FREQ);
-	// compute lookup table for sin and cos
-	InitFixSinTab();
-#else
-	for (int i=0; i<256; i++) {
-	  resonanceLP[i] = CALC_RESONANCE_LP(i);
-	  resonanceHP[i] = CALC_RESONANCE_HP(i);
-	}
-#endif
-#endif
 
 	Reset();
 
@@ -889,15 +756,9 @@ void DigitalRenderer::Reset(void)
 
 	f_type = FILT_NONE;
 	f_freq = f_res = 0;
-#ifdef USE_FIXPOINT_MATHS
-	f_ampl = FixNo(1);
-	d1 = d2 = g1 = g2 = 0;
-	xn1 = xn2 = yn1 = yn2 = 0;
-#else
 	f_ampl = 1.0;
 	d1 = d2 = g1 = g2 = 0.0;
 	xn1 = xn2 = yn1 = yn2 = 0.0;
-#endif
 
 	sample_in_ptr = 0;
 	memset(sample_buf, 0, SAMPLE_BUF_SIZE);
@@ -920,22 +781,14 @@ void DigitalRenderer::WriteRegister(uint16 adr, uint8 byte)
 		case 7:
 		case 14:
 			voice[v].freq = (voice[v].freq & 0xff00) | byte;
-#ifdef USE_FIXPOINT_MATHS
-			voice[v].add = sidquot.imul((int)voice[v].freq);
-#else
 			voice[v].add = (uint32)((float)voice[v].freq * SID_FREQ / SAMPLE_FREQ);
-#endif
 			break;
 
 		case 1:
 		case 8:
 		case 15:
 			voice[v].freq = (voice[v].freq & 0xff) | (byte << 8);
-#ifdef USE_FIXPOINT_MATHS
-			voice[v].add = sidquot.imul((int)voice[v].freq);
-#else
 			voice[v].add = (uint32)((float)voice[v].freq * SID_FREQ / SAMPLE_FREQ);
-#endif
 			break;
 
 		case 2:
@@ -1005,11 +858,7 @@ void DigitalRenderer::WriteRegister(uint16 adr, uint8 byte)
 			voice[2].mute = byte & 0x80;
 			if (((byte >> 4) & 7) != f_type) {
 				f_type = (byte >> 4) & 7;
-#ifdef USE_FIXPOINT_MATHS
-				xn1 = xn2 = yn1 = yn2 = 0;
-#else
 				xn1 = xn2 = yn1 = yn2 = 0.0;
-#endif
 				if (ThePrefs.SIDFilters)
 					calc_filter();
 			}
@@ -1034,18 +883,6 @@ void DigitalRenderer::NewPrefs(Prefs *prefs)
 
 void DigitalRenderer::calc_filter(void)
 {
-#ifdef USE_FIXPOINT_MATHS
-	FixPoint fr, arg;
-
-	if (f_type == FILT_ALL)
-	{
-		d1 = 0; d2 = 0; g1 = 0; g2 = 0; f_ampl = FixNo(1); return;
-	}
-	else if (f_type == FILT_NONE)
-	{
-		d1 = 0; d2 = 0; g1 = 0; g2 = 0; f_ampl = 0; return;
-        }
-#else
 	float fr, arg;
 
 	// Check for some trivial cases
@@ -1060,59 +897,12 @@ void DigitalRenderer::calc_filter(void)
 		f_ampl = 0.0;
 		return;
 	}
-#endif
 
 	// Calculate resonance frequency
 	if (f_type == FILT_LP || f_type == FILT_LPBP)
-#ifdef PRECOMPUTE_RESONANCE
-		fr = resonanceLP[f_freq];
-#else
 		fr = CALC_RESONANCE_LP(f_freq);
-#endif
 	else
-#ifdef PRECOMPUTE_RESONANCE
-		fr = resonanceHP[f_freq];
-#else
 		fr = CALC_RESONANCE_HP(f_freq);
-#endif
-
-#ifdef USE_FIXPOINT_MATHS
-	// explanations see below.
-	arg = fr / (SAMPLE_FREQ >> 1);
-	if (arg > FixNo(0.99)) {arg = FixNo(0.99);}
-	if (arg < FixNo(0.01)) {arg = FixNo(0.01);}
-
-	g2 = FixNo(0.55) + FixNo(1.2) * arg * (arg - 1) + FixNo(0.0133333333) * f_res;
-	g1 = FixNo(-2) * g2.sqrt() * fixcos(arg);
-
-	if (f_type == FILT_LPBP || f_type == FILT_HPBP) {g2 += FixNo(0.1);}
-
-	if (g1.abs() >= g2 + 1)
-	{
-	  if (g1 > 0) {g1 = g2 + FixNo(0.99);}
-	  else {g1 = -(g2 + FixNo(0.99));}
-	}
-
-	switch (f_type)
-	{
-	  case FILT_LPBP:
-	  case FILT_LP:
-		d1 = FixNo(2); d2 = FixNo(1); f_ampl = FixNo(0.25) * (1 + g1 + g2); break;
-	  case FILT_HPBP:
-	  case FILT_HP:
-		d1 = FixNo(-2); d2 = FixNo(1); f_ampl = FixNo(0.25) * (1 - g1 + g2); break;
-	  case FILT_BP:
-		d1 = 0; d2 = FixNo(-1);
-		f_ampl = FixNo(0.25) * (1 + g1 + g2) * (1 + fixcos(arg)) / fixsin(arg);
-		break;
-	  case FILT_NOTCH:
-		d1 = FixNo(-2) * fixcos(arg); d2 = FixNo(1);
-		f_ampl = FixNo(0.25) * (1 + g1 + g2) * (1 + fixcos(arg)) / fixsin(arg);
-		break;
-	  default: break;
-	}
-
-#else
 
 	// Limit to <1/2 sample frequency, avoid div by 0 in case FILT_BP below
 	arg = fr / (float)(SAMPLE_FREQ >> 1);
@@ -1164,7 +954,6 @@ void DigitalRenderer::calc_filter(void)
 		default:
 			break;
 	}
-#endif
 }
 
 
@@ -1172,34 +961,18 @@ void DigitalRenderer::calc_filter(void)
  *  Fill one audio buffer with calculated SID sound
  */
 
-#ifdef __riscos__
-void DigitalRenderer::calc_buffer(uint8 *buf, long count)
-#else
 void DigitalRenderer::calc_buffer(int16 *buf, long count)
-#endif
 {
 	// Get filter coefficients, so the emulator won't change
 	// them in the middle of our calculations
-#ifdef USE_FIXPOINT_MATHS
-	FixPoint cf_ampl = f_ampl;
-	FixPoint cd1 = d1, cd2 = d2, cg1 = g1, cg2 = g2;
-#else
 	float cf_ampl = f_ampl;
 	float cd1 = d1, cd2 = d2, cg1 = g1, cg2 = g2;
-#endif
 
-#ifdef __riscos__
-	uint8 *LinToLog, *LogScale;
-#endif
 
 	// Index in sample_buf for reading, 16.16 fixed
 	uint32 sample_count = (sample_in_ptr + SAMPLE_BUF_SIZE/2) << 16;
 
-#ifdef __riscos__	// on RISC OS we have 8 bit logarithmic sound
-	DigitalRenderer_GetTables(&LinToLog, &LogScale);	// get translation tables
-#else
 	count >>= 1;	// 16 bit mono output, count is in bytes
-#endif
 	while (count--) {
 		// Get current master volume from sample buffer,
 		// calculate sampled voice
@@ -1314,37 +1087,20 @@ void DigitalRenderer::calc_buffer(int16 *buf, long count)
 
 		// Filter
 		if (ThePrefs.SIDFilters) {
-#ifdef USE_FIXPOINT_MATHS
-			int32 xn = cf_ampl.imul(sum_output_filter);
-			int32 yn = xn+cd1.imul(xn1)+cd2.imul(xn2)-cg1.imul(yn1)-cg2.imul(yn2);
-			yn2 = yn1; yn1 = yn; xn2 = xn1; xn1 = xn;
-			sum_output_filter = yn;
-#else
 			float xn = (float)sum_output_filter * cf_ampl;
 			float yn = xn + cd1 * xn1 + cd2 * xn2 - cg1 * yn1 - cg2 * yn2;
 			yn2 = yn1; yn1 = yn; xn2 = xn1; xn1 = xn;
 			sum_output_filter = (int32)yn;
-#endif
 		}
 
 		// Write to buffer
-#if defined(__riscos__)	// lookup in 8k (13bit) translation table
-		*buf++ = LinToLog[((sum_output + sum_output_filter) >> 13) & 0x1fff];
-#else
 		*buf++ = (sum_output + sum_output_filter) >> 10;
-#endif
 	}
 }
 
 
 // Manufacturer independent sound is still just a dream...
-#if defined(__BEOS__)
-#include "SID_Be.h"
-
-#elif defined(AMIGA)
-#include "SID_Amiga.h"
-
-#elif defined(HAVE_SDL)
+#if   defined(HAVE_SDL)
 #include "SID_SDL.h"
 # if defined(__linux__)
 # include "SID_catweasel.h"
@@ -1354,20 +1110,8 @@ void DigitalRenderer::calc_buffer(int16 *buf, long count)
 #include "SID_linux.h"
 #include "SID_catweasel.h"
 
-#elif defined(SUN)
-#include "SID_sun.h"
-
-#elif defined(__hpux)
-#include "SID_hp.h"
-
-#elif defined(__mac__)
-#include "SID_mac.h"
-
 #elif defined(WIN32)
 #include "SID_WIN32.h"
-
-#elif defined(__riscos__)
-#include "SID_Acorn.h"
 
 #else	// No sound
 void DigitalRenderer::init_sound(void) {ready = false;}
@@ -1393,10 +1137,6 @@ void MOS6581::open_close_renderer(int old_type, int new_type)
 	// Create new renderer
 	if (new_type == SIDTYPE_DIGITAL) {
 		the_renderer = new DigitalRenderer(the_c64);
-#ifdef AMIGA
-	} else if (new_type == SIDTYPE_SIDCARD) {
-		the_renderer = new SIDCardRenderer;
-#endif
 #ifdef __linux__
 	} else if (new_type == SIDTYPE_SIDCARD) {
 		the_renderer = new CatweaselRenderer;

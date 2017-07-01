@@ -22,11 +22,7 @@
 #include "main.h"
 
 #define FRAME_INTERVAL		(1000/SCREEN_FREQ)	// in milliseconds
-#ifdef FRODO_SC
 #define SPEEDOMETER_INTERVAL	4000			// in milliseconds
-#else
-#define SPEEDOMETER_INTERVAL	1000			// in milliseconds
-#endif
 #define JOYSTICK_SENSITIVITY	40			// % of live range
 #define JOYSTICK_MIN		0x0000			// min value of range
 #define JOYSTICK_MAX		0xffff			// max value of range
@@ -373,46 +369,17 @@ void C64::thread_func()
 		if (have_a_break)
 			TheDisplay->WaitUntilActive();
 
-#ifdef FRODO_SC
 		if (ThePrefs.Emul1541Proc)
 			EmulateCyclesWith1541();
 		else
 			EmulateCyclesWithout1541();
 		state_change = FALSE;
-#else
-		// The order of calls is important here
-		int cycles = TheVIC->EmulateLine();
-		TheSID->EmulateLine();
-#if !PRECISE_CIA_CYCLES
-		TheCIA1->EmulateLine(ThePrefs.CIACycles);
-		TheCIA2->EmulateLine(ThePrefs.CIACycles);
-#endif
-		if (ThePrefs.Emul1541Proc) {
-			int cycles_1541 = ThePrefs.FloppyCycles;
-			TheCPU1541->CountVIATimers(cycles_1541);
-
-			if (!TheCPU1541->Idle) {
-				// 1541 processor active, alternately execute
-				//  6502 and 6510 instructions until both have
-				//  used up their cycles
-				while (cycles >= 0 || cycles_1541 >= 0)
-					if (cycles > cycles_1541)
-						cycles -= TheCPU->EmulateLine(1);
-					else
-						cycles_1541 -= TheCPU1541->EmulateLine(1);
-			} else
-				TheCPU->EmulateLine(cycles);
-		} else
-			// 1541 processor disabled, only emulate 6510
-			TheCPU->EmulateLine(cycles);
-#endif
 	}
 
 	thread_running = FALSE;
 
 }
 
-#ifdef FRODO_SC
 
 void C64::EmulateCyclesWith1541()
 {
@@ -421,10 +388,8 @@ void C64::EmulateCyclesWith1541()
 		// The order of calls is important here
 		if (TheVIC->EmulateCycle())
 			TheSID->EmulateLine();
-#ifndef BATCH_CIA_CYCLES
 		TheCIA1->EmulateCycle();
 		TheCIA2->EmulateCycle();
-#endif
 		TheCPU->EmulateCycle();
 		TheCPU1541->CountVIATimers(1);
 		if (!TheCPU1541->Idle)
@@ -440,13 +405,10 @@ void C64::EmulateCyclesWithout1541()
 		// The order of calls is important here
 		if (TheVIC->EmulateCycle())
 			TheSID->EmulateLine();
-#ifndef BATCH_CIA_CYCLES
 		TheCIA1->EmulateCycle();
 		TheCIA2->EmulateCycle();
-#endif
 		TheCPU->EmulateCycle();
 		CycleCounter++;
 	}
 }
 
-#endif

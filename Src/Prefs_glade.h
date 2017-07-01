@@ -99,40 +99,33 @@ static void create_joystick_menu(const char *widget_name)
 
 static void set_values()
 {
+	// Drives
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(glade_xml_get_widget(xml, "emul1541_proc")), prefs->Emul1541Proc);
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(glade_xml_get_widget(xml, "map_slash")), prefs->MapSlash);
-
 	gtk_entry_set_text(GTK_ENTRY(gnome_file_entry_gtk_entry(GNOME_FILE_ENTRY(glade_xml_get_widget(xml, "drive8_path")))), prefs->DrivePath[0]);
 	gtk_entry_set_text(GTK_ENTRY(gnome_file_entry_gtk_entry(GNOME_FILE_ENTRY(glade_xml_get_widget(xml, "drive9_path")))), prefs->DrivePath[1]);
 	gtk_entry_set_text(GTK_ENTRY(gnome_file_entry_gtk_entry(GNOME_FILE_ENTRY(glade_xml_get_widget(xml, "drive10_path")))), prefs->DrivePath[2]);
 	gtk_entry_set_text(GTK_ENTRY(gnome_file_entry_gtk_entry(GNOME_FILE_ENTRY(glade_xml_get_widget(xml, "drive11_path")))), prefs->DrivePath[3]);
 
+	// Video/Sound
 	gtk_option_menu_set_history(GTK_OPTION_MENU(glade_xml_get_widget(xml, "display_type")), prefs->DisplayType);
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(glade_xml_get_widget(xml, "sprites_on")), prefs->SpritesOn);
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(glade_xml_get_widget(xml, "sprite_collisions")), prefs->SpriteCollisions);
-
 	gtk_option_menu_set_history(GTK_OPTION_MENU(glade_xml_get_widget(xml, "sid_type")), prefs->SIDType);
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(glade_xml_get_widget(xml, "sid_filters")), prefs->SIDFilters);
 
+	// Input
 	create_joystick_menu("joystick1_port");
 	create_joystick_menu("joystick2_port");
-
 	gtk_option_menu_set_history(GTK_OPTION_MENU(glade_xml_get_widget(xml, "joystick1_port")), prefs->Joystick1Port);
 	gtk_option_menu_set_history(GTK_OPTION_MENU(glade_xml_get_widget(xml, "joystick2_port")), prefs->Joystick2Port);
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(glade_xml_get_widget(xml, "joystick_swap")), prefs->JoystickSwap);
 
+	// Options
 	gtk_spin_button_set_value(GTK_SPIN_BUTTON(glade_xml_get_widget(xml, "skip_frames")), prefs->SkipFrames);
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(glade_xml_get_widget(xml, "limit_speed")), prefs->LimitSpeed);
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(glade_xml_get_widget(xml, "fast_reset")), prefs->FastReset);
-
 	gtk_option_menu_set_history(GTK_OPTION_MENU(glade_xml_get_widget(xml, "reu_size")), prefs->REUSize);
-
-	gtk_spin_button_set_value(GTK_SPIN_BUTTON(glade_xml_get_widget(xml, "normal_cycles")), prefs->NormalCycles);
-	gtk_spin_button_set_value(GTK_SPIN_BUTTON(glade_xml_get_widget(xml, "bad_line_cycles")), prefs->BadLineCycles);
-	gtk_spin_button_set_value(GTK_SPIN_BUTTON(glade_xml_get_widget(xml, "cia_cycles")), prefs->CIACycles);
-	gtk_spin_button_set_value(GTK_SPIN_BUTTON(glade_xml_get_widget(xml, "floppy_cycles")), prefs->FloppyCycles);
-
-	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(glade_xml_get_widget(xml, "cia_irq_hack")), prefs->CIAIRQHack);
 
 	ghost_widgets();
 }
@@ -153,37 +146,31 @@ static void get_drive_path(int num, const char *widget_name)
 
 static void get_values()
 {
+	// Drives
 	prefs->Emul1541Proc = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(glade_xml_get_widget(xml, "emul1541_proc")));
 	prefs->MapSlash = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(glade_xml_get_widget(xml, "map_slash")));
-
 	get_drive_path(0, "drive8_path");
 	get_drive_path(1, "drive9_path");
 	get_drive_path(2, "drive10_path");
 	get_drive_path(3, "drive11_path");
 
+	// Video/Sound
 	prefs->DisplayType = gtk_option_menu_get_history(GTK_OPTION_MENU(glade_xml_get_widget(xml, "display_type")));
 	prefs->SpritesOn = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(glade_xml_get_widget(xml, "sprites_on")));
 	prefs->SpriteCollisions = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(glade_xml_get_widget(xml, "sprite_collisions")));
-
 	prefs->SIDType = gtk_option_menu_get_history(GTK_OPTION_MENU(glade_xml_get_widget(xml, "sid_type")));
 	prefs->SIDFilters = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(glade_xml_get_widget(xml, "sid_filters")));
 
+	// Input
 	prefs->Joystick1Port = gtk_option_menu_get_history(GTK_OPTION_MENU(glade_xml_get_widget(xml, "joystick1_port")));
 	prefs->Joystick2Port = gtk_option_menu_get_history(GTK_OPTION_MENU(glade_xml_get_widget(xml, "joystick2_port")));
 	prefs->JoystickSwap = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(glade_xml_get_widget(xml, "joystick_swap")));
 
+	// Options
 	prefs->SkipFrames = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(glade_xml_get_widget(xml, "skip_frames")));
 	prefs->LimitSpeed = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(glade_xml_get_widget(xml, "limit_speed")));
 	prefs->FastReset = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(glade_xml_get_widget(xml, "fast_reset")));
-
 	prefs->REUSize = gtk_option_menu_get_history(GTK_OPTION_MENU(glade_xml_get_widget(xml, "reu_size")));
-
-	prefs->NormalCycles = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(glade_xml_get_widget(xml, "normal_cycles")));
-	prefs->BadLineCycles = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(glade_xml_get_widget(xml, "bad_line_cycles")));
-	prefs->CIACycles = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(glade_xml_get_widget(xml, "cia_cycles")));
-	prefs->FloppyCycles = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(glade_xml_get_widget(xml, "floppy_cycles")));
-
-	prefs->CIAIRQHack = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(glade_xml_get_widget(xml, "cia_irq_hack")));
 }
 
 
@@ -204,9 +191,6 @@ static void ghost_widgets()
 
 	ghost_widget("sid_filters", prefs->SIDType != SIDTYPE_DIGITAL);
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(glade_xml_get_widget(xml, "sid_filters")), prefs->SIDType == SIDTYPE_DIGITAL ? prefs->SIDFilters : (prefs->SIDType == SIDTYPE_SIDCARD ? true : false));
-
-	ghost_widget("timing_control", IsFrodoSC);
-	ghost_widget("advanced_options", IsFrodoSC);
 }
 
 

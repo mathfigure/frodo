@@ -25,19 +25,6 @@
 #include "C64.h"
 
 
-// Set this to 1 if the 6502 PC should be represented by a real pointer
-#ifndef FRODO_SC
-#ifndef PC_IS_POINTER
-#define PC_IS_POINTER 1
-#endif
-#endif
-
-// Set this to 1 for more precise CPU cycle calculation
-#ifndef PRECISE_CPU_CYCLES
-#define PRECISE_CPU_CYCLES 0
-#endif
-
-
 // Interrupt types
 enum {
 	INT_VIA1IRQ,
@@ -58,11 +45,7 @@ class MOS6502_1541 {
 public:
 	MOS6502_1541(C64 *c64, Job1541 *job, C64Display *disp, uint8 *Ram, uint8 *Rom);
 
-#ifdef FRODO_SC
 	void EmulateCycle(void);			// Emulate one clock cycle
-#else
-	int EmulateLine(int cycles_left);	// Emulate until cycles_left underflows
-#endif
 	void Reset(void);
 	void AsyncReset(void);				// Reset the CPU asynchronously
 	void GetState(MOS6502State *s);
@@ -112,13 +95,8 @@ private:
 	uint8 n_flag, z_flag;
 	bool v_flag, d_flag, i_flag, c_flag;
 	uint8 a, x, y, sp;
-#if PC_IS_POINTER
-	uint8 *pc, *pc_base;
-#else
 	uint16 pc;
-#endif
 
-#ifdef FRODO_SC
 	uint32 first_irq_cycle;
 
 	enum {
@@ -132,9 +110,6 @@ private:
 	uint16 ar, ar2;			// Address registers
 	uint8 rdbuf;			// Data buffer for RMW instructions
 	uint8 ddr, pr;			// Processor port
-#else
-	int borrowed_cycles;	// Borrowed cycles from next line
-#endif
 
 	uint8 via1_pra;		// PRA of VIA 1
 	uint8 via1_ddra;	// DDRA of VIA 1
@@ -210,7 +185,6 @@ struct MOS6502State {
  *  Trigger job loop IRQ
  */
 
-#ifdef FRODO_SC
 inline void MOS6502_1541::TriggerJobIRQ(void)
 {
 	if (!(interrupt.intr[INT_VIA2IRQ]))
@@ -218,13 +192,6 @@ inline void MOS6502_1541::TriggerJobIRQ(void)
 	interrupt.intr[INT_VIA2IRQ] = true;
 	Idle = false;
 }
-#else
-inline void MOS6502_1541::TriggerJobIRQ(void)
-{
-	interrupt.intr[INT_VIA2IRQ] = true;
-	Idle = false;
-}
-#endif
 
 
 /*

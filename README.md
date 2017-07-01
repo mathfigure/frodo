@@ -22,7 +22,6 @@ sudo make install
 
 ### Run
 ```bash
-Frodo
 FrodoSC
 ```
 

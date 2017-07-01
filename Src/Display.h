@@ -21,13 +21,7 @@
 #ifndef _DISPLAY_H
 #define _DISPLAY_H
 
-#ifdef __BEOS__
-#include <InterfaceKit.h>
-#endif
 
-#ifdef AMIGA
-#include <graphics/rastport.h>
-#endif
 
 #ifdef HAVE_SDL
 struct SDL_Surface;
@@ -37,19 +31,11 @@ struct SDL_Surface;
 #include <ddraw.h>
 #endif
 
-#ifdef __riscos__
-#include "ROlib.h"
-#endif
 
 
 // Display dimensions
-#if defined(SMALL_DISPLAY)
-const int DISPLAY_X = 0x168;
-const int DISPLAY_Y = 0x110;
-#else
 const int DISPLAY_X = 0x180;
 const int DISPLAY_Y = 0x110;
-#endif
 
 
 class C64Window;
@@ -68,30 +54,13 @@ public:
 	void Speedometer(int speed);
 	uint8 *BitmapBase(void);
 	int BitmapXMod(void);
-#ifdef __riscos__
-	void PollKeyboard(uint8 *key_matrix, uint8 *rev_matrix, uint8 *joystick, uint8 *joystick2);
-#else
 	void PollKeyboard(uint8 *key_matrix, uint8 *rev_matrix, uint8 *joystick);
-#endif
 	bool NumLock(void);
 	void InitColors(uint8 *colors);
 	void NewPrefs(Prefs *prefs);
 
 	C64 *TheC64;
 
-#ifdef __BEOS__
-	void Pause(void);
-	void Resume(void);
-#endif
-
-#ifdef __riscos__
-	void ModeChange(void);
-	unsigned int *GetColourTable(void);	// returns pointer to mode_cols
-	bool CheckForUnpause(bool CheckLastState);
-
-	ROScreen *screen;
-	Joy_Keys JoystickKeys[2];		// it's easier making the joystick keys public
-#endif
 
 #ifdef __unix
 	bool quit_requested;
@@ -101,32 +70,6 @@ private:
 	int led_state[4];
 	int old_led_state[4];
 
-#ifdef __BEOS__
-	C64Window *the_window;	// One of these is NULL
-	C64Screen *the_screen;
-	bool using_screen;		// Flag: Using the_screen
-	key_info old_key_info;
-	int draw_bitmap;		// Number of bitmap for the VIC to draw into
-#endif
-
-#ifdef AMIGA
-	void draw_led_bar(void);	// Draw LED bar at the bottom of the window
-	void draw_led(int num, int state);	// Draw one LED
-
-	struct Window *the_window;	// Pointer to C64 display window
-	struct Screen *the_screen;	// The window's screen
-	struct RastPort *the_rp;	// The window's RastPort
-	struct VisualInfo *the_visual_info;
-	struct Menu *the_menus;
-	struct TextFont *led_font;
-	struct TextFont *speedo_font;
-	struct RastPort temp_rp;	// For WritePixelArray8()
-	struct BitMap *temp_bm;
-	uint8 *chunky_buf;			// Chunky buffer for drawing into
-	LONG pens[16];				// Pens for C64 colors
-	int xo, yo;					// Window X/Y border size
-	struct FileRequester *open_req, *save_req;	// File requesters for load/save snapshot
-#endif
 
 #ifdef HAVE_SDL
 	char speedometer_string[16];		// Speedometer text
@@ -221,11 +164,6 @@ private:
 	int colors_depth;			// depth of the colors table
 #endif
 
-#ifdef __riscos__
-	unsigned int mode_cols[256];	// Colours in the current mode corresponding to C64's
-	uint8 *bitmap;
-	uint32 lastkeys[8];		// bitfield describing keys pressed last time.
-#endif
 };
 
 

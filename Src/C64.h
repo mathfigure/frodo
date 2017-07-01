@@ -21,19 +21,6 @@
 #ifndef _C64_H
 #define _C64_H
 
-#ifdef __BEOS__
-#include <KernelKit.h>
-#endif
-
-#ifdef AMIGA
-#include <devices/timer.h>
-#include <devices/gameport.h>
-#include <devices/inputevent.h>
-#endif
-
-#ifdef __riscos__
-#include "ROlib.h"
-#endif
 
 
 // Sizes of memory areas
@@ -44,10 +31,6 @@ const int KERNAL_ROM_SIZE = 0x2000;
 const int CHAR_ROM_SIZE = 0x1000;
 const int DRIVE_RAM_SIZE = 0x800;
 const int DRIVE_ROM_SIZE = 0x4000;
-
-
-// false: Frodo, true: FrodoSC
-extern bool IsFrodoSC;
 
 
 class Prefs;
@@ -61,7 +44,6 @@ class IEC;
 class REU;
 class MOS6502_1541;
 class Job1541;
-class CmdPipe;
 
 class C64 {
 public:
@@ -130,33 +112,6 @@ private:
 	uint8 orig_kernal_1d84,	// Original contents of kernal locations $1d84 and $1d85
 		  orig_kernal_1d85;	// (for undoing the Fast Reset patch)
 
-#ifdef __BEOS__
-public:
-	void SoundSync(void);
-
-private:
-	static long thread_invoc(void *obj);
-	void open_close_joystick(int port, int oldjoy, int newjoy);
-
-	void *joy[2];			// Joystick objects (BJoystick or BDigitalPort)
-	bool joy_geek_port[2];	// Flag: joystick on GeekPort?
-	thread_id the_thread;
-	sem_id pause_sem;
-	sem_id sound_sync_sem;
-	bigtime_t start_time;
-#endif
-
-#ifdef AMIGA
-	struct MsgPort *timer_port;		// For speed limiter
-	struct timerequest *timer_io;
-	struct timeval start_time;
-	struct MsgPort *game_port;		// For joystick
-	struct IOStdReq *game_io;
-	struct GamePortTrigger game_trigger;
-	struct InputEvent game_event;
-	UBYTE joy_state;				// Current state of joystick
-	bool game_open, port_allocated;	// Flags: gameport.device opened, game port allocated
-#endif
 
 #ifdef __unix
 	void open_close_joystick(int port, int oldjoy, int newjoy);
@@ -170,10 +125,8 @@ private:
 	void StopTimer();
 	static void CALLBACK StaticTimeProc(UINT uID, UINT uMsg, DWORD dwUser, DWORD dw1, DWORD dw2);
 	void TimeProc(UINT id);
-#ifdef FRODO_SC
 	void EmulateCyclesWith1541();
 	void EmulateCyclesWithout1541();
-#endif
 
 	DWORD ref_time;				// when frame count was reset
 	int skipped_frames;			// number of skipped frames
@@ -185,34 +138,6 @@ private:
 	bool state_change;
 #endif
 
-#ifdef __riscos__
-public:
-	void RequestSnapshot(void);
-	bool LoadOldSnapshot(FILE *f);
-	void LoadSystemConfig(const char *filename);	// loads timing vals and keyboard joys
-	void SaveSystemConfig(const char *filename);	// saves timing vals and keyboard joys
-	void ReadTimings(int *poll_after, int *speed_after, int *sound_after);
-	void WriteTimings(int poll_after, int speed_after, int sound_after);
-
-	WIMP *TheWIMP;
-	int PollAfter;		// centiseconds before polling
-	int SpeedAfter;		// centiseconds before updating speedometer
-	int PollSoundAfter;	// *rasterlines* after which DigitalRenderer is polled
-	int HostVolume;		// sound volume of host machine
-
-private:
-	bool make_a_snapshot;
-
-	uint8 joykey2;			// two keyboard joysticks possible here
-
-	uint8 joystate[2];		// Joystick state
-	bool Poll;			// TRUE if polling should take place
-	int LastPoll, LastFrame, LastSpeed;	// time of last poll / last frame / speedom (cs)
-	int FramesSince;
-	int laststate;			// last keyboard state (-> scroll lock)
-	int lastptr;			// last mouse pointer shape
-	bool SingleTasking;
-#endif
 };
 
 
