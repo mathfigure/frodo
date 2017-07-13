@@ -80,7 +80,7 @@ Prefs::Prefs()
 	AutoPause = false;
 	PrefsAtStartup = false;
 	SystemMemory = false;
-	AlwaysCopy = false;
+	AlwaysCopy = true;
 	SystemKeys = true;
 	ShowLEDs = true;
 }

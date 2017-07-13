@@ -176,7 +176,7 @@ void Prefs::SetupControls(int page)
 		SetupComboClear(IDC_DISPLAYMODE);
 		SetupComboAdd(IDC_DISPLAYMODE, "Default");
 		{
-			C64Display *TheDisplay = TheApp->TheC64->TheDisplay;
+			C64Display *TheDisplay = TheC64->TheDisplay;
 			int n = TheDisplay->GetNumDisplayModes();
 			const C64Display::DisplayMode *modes =
 				TheDisplay->GetDisplayModes();
@@ -232,8 +232,8 @@ void Prefs::SetValues(int page)
 		SetCheckBox(IDC_LIMITSPEED, LimitSpeed);
 		SetCheckBox(IDC_SPRITES, SpritesOn);
 		SetCheckBox(IDC_SPRITECOLLISIONS, SpriteCollisions);
-		SetCheckBox(IDC_JOYSTICK1, Joystick1On);
-		SetCheckBox(IDC_JOYSTICK2, Joystick2On);
+		SetCheckBox(IDC_JOYSTICK1, Joystick1Port);
+		SetCheckBox(IDC_JOYSTICK2, Joystick2Port);
 		SetCheckBox(IDC_SWAPJOYSTICKS, JoystickSwap);
 		SetCheckBox(IDC_FASTRESET, FastReset);
 		SetCheckBox(IDC_CIAIRQHACK, CIAIRQHack);
@@ -302,8 +302,8 @@ void Prefs::GetValues(int page)
 		GetCheckBox(IDC_LIMITSPEED, LimitSpeed);
 		GetCheckBox(IDC_SPRITES, SpritesOn);
 		GetCheckBox(IDC_SPRITECOLLISIONS, SpriteCollisions);
-		GetCheckBox(IDC_JOYSTICK1, Joystick1On);
-		GetCheckBox(IDC_JOYSTICK2, Joystick2On);
+		GetCheckBox(IDC_JOYSTICK1, Joystick1Port);
+		GetCheckBox(IDC_JOYSTICK2, Joystick2Port);
 		GetCheckBox(IDC_SWAPJOYSTICKS, JoystickSwap);
 		GetCheckBox(IDC_FASTRESET, FastReset);
 		GetCheckBox(IDC_CIAIRQHACK, CIAIRQHack);

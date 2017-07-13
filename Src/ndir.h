@@ -18,6 +18,9 @@
     $Header$
  */
 
+#ifndef _NDIR_H
+#define _NDIR_H
+
 /* Everything non trivial in this code is taken from: @(#)msd_dir.c 1.4
    87/11/06.  A public domain implementation of BSD directory routines
    for MS-DOS.  Written by Michael Rendell ({uunet,utai}michael@garfield),
@@ -59,7 +62,9 @@ extern long telldir (DIR *);
 extern DIR *opendir (const char *);
 extern void closedir (DIR *);
 extern struct direct *readdir (DIR *);
-
+
+#endif
+
 /* 
  * Local Variables:
  * mode:C

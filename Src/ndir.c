@@ -23,7 +23,7 @@
    for MS-DOS.  Written by Michael Rendell ({uunet,utai}michael@garfield),
    August 1987 */
 
-
+
 #include <io.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -212,7 +212,7 @@ main (int argc, char *argv[])
 }
 
 #endif /* TEST */
-
+
 /* 
  * Local Variables:
  * mode:C

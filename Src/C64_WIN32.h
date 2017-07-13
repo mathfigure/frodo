@@ -22,7 +22,7 @@
 #include "main.h"
 
 #define FRAME_INTERVAL		(1000/SCREEN_FREQ)	// in milliseconds
-#define SPEEDOMETER_INTERVAL	4000			// in milliseconds
+#define SPEEDOMETER_INTERVAL	1000			// in milliseconds
 #define JOYSTICK_SENSITIVITY	40			// % of live range
 #define JOYSTICK_MIN		0x0000			// min value of range
 #define JOYSTICK_MAX		0xffff			// max value of range
@@ -84,7 +84,7 @@ void C64::Run()
 	// Patch kernal IEC routines
 	orig_kernal_1d84 = Kernal[0x1d84];
 	orig_kernal_1d85 = Kernal[0x1d85];
-	patch_kernal(ThePrefs.FastReset, ThePrefs.Emul1541Proc);
+	PatchKernal(ThePrefs.FastReset, ThePrefs.Emul1541Proc);
 
 	// Start the CPU thread
 	thread_func();
@@ -158,7 +158,7 @@ void C64::VBlank(bool draw_frame)
 	TheCIA1->CountTOD();
 	TheCIA2->CountTOD();
 
-#if 1
+#if 0
 	// Output a frag.
 	TheSID->VBlank();
 #endif
@@ -388,6 +388,8 @@ void C64::EmulateCyclesWith1541()
 		// The order of calls is important here
 		if (TheVIC->EmulateCycle())
 			TheSID->EmulateLine();
+		TheCIA1->CheckIRQs();
+		TheCIA2->CheckIRQs();
 		TheCIA1->EmulateCycle();
 		TheCIA2->EmulateCycle();
 		TheCPU->EmulateCycle();
@@ -405,6 +407,8 @@ void C64::EmulateCyclesWithout1541()
 		// The order of calls is important here
 		if (TheVIC->EmulateCycle())
 			TheSID->EmulateLine();
+		TheCIA1->CheckIRQs();
+		TheCIA2->CheckIRQs();
 		TheCIA1->EmulateCycle();
 		TheCIA2->EmulateCycle();
 		TheCPU->EmulateCycle();

@@ -31,11 +31,6 @@
 #define BUFFER_SIZE  (2*FRAGMENT_SIZE*BUFFER_FRAGS)	// bytes, not samples
 #define MAX_LEAD_AVG BUFFER_FRAGS			// lead average count
 
-// This won't hurt DirectX 2 but it will help when using the DirectX 3 runtime.
-#if !defined(DSBCAPS_GETCURRENTPOSITION2)
-#define DSBCAPS_GETCURRENTPOSITION2 0x00010000
-#endif
-
 class DigitalPlayer {
 
 public:
@@ -139,7 +134,7 @@ void DigitalRenderer::EmulateLine()
 	sample_buf[sample_in_ptr] = volume;
 	sample_in_ptr = (sample_in_ptr + 1) % SAMPLE_BUF_SIZE;
 
-#if 0
+#if 1
 	// Now see how many samples have to be added for this line.
 	// XXX: This is too much computation here, precompute it.
 	divisor += SAMPLE_FREQ;

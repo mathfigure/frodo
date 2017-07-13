@@ -698,7 +698,7 @@ void C64Display::CreateObjects()
 	error_on_brush = CreateBrushIndirect(&logbrush);
 }
 
-HRESULT CALLBACK C64Display::StaticWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK C64Display::StaticWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	return TheDisplay->WindowProc(hWnd, message, wParam, lParam);
 }
@@ -1425,16 +1425,26 @@ int C64Display::CompareModes(const void *e1, const void *e2)
 	return 0;
 }
 
+typedef HRESULT ( WINAPI* LPDIRECTDRAWCREATE )( GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnknown FAR *pUnkOuter );
+
 BOOL C64Display::StartDirectDraw()
 {
 	// Setup our window size, position, style, etc.
 	SetupWindow();
 
-	// Create the main DirectDraw object.
-	HRESULT ddrval = DirectDrawCreate(NULL, &pDD, NULL);
+	// Create the main DirectDraw object (dynamic linking of ddraw.dll)
+	HRESULT ddrval = ~DD_OK;
+	HINSTANCE ddrawlib = LoadLibrary("ddraw.dll");
+	if(ddrawlib) {
+		LPDIRECTDRAWCREATE pDirectDrawCreate = (LPDIRECTDRAWCREATE) GetProcAddress(ddrawlib, "DirectDrawCreate");
+
+		// Create the main DirectDraw object.
+		if(pDirectDrawCreate)
+			ddrval = pDirectDrawCreate(NULL, &pDD, NULL);
+	}
 	if (ddrval != DD_OK) {
-		DebugResult("DirectDrawCreate failed", ddrval);
-		return Fail("Failed to initialize direct draw.");
+			DebugResult("DirectDrawCreate failed", ddrval);
+			return Fail("Failed to initialize direct draw.");
 	}
 
 	if (full_screen) {
@@ -1470,7 +1480,7 @@ BOOL C64Display::StartDirectDraw()
 			}
 		}
 		else {
-			for (int i = 0; i < num_display_modes; i++) {
+			int i = 0; for (i = 0; i < num_display_modes; i++) {
 				DisplayMode *mode = &display_modes[i];
 				if (mode->x < view_x || mode->y < view_y)
 					continue;
@@ -1743,7 +1753,7 @@ BOOL C64Display::BuildColorTable()
 		COLORREF rgb = RGB(red, green, blue);
 
 		// Set pixel(0, 0) to that value.
-		LPDIRECTDRAWSURFACE pSurface = pBack ? pBack : pPrimary;
+		LPDIRECTDRAWSURFACE pSurface = pWork; /* AERO fix */ //pBack ? pBack : pPrimary;
 		HDC hdc;
 		if (pSurface->GetDC(&hdc) != DD_OK)
 			return Fail("Failed getting direct draw device context.");

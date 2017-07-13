@@ -4,36 +4,22 @@
 VERSION   = 4
 REVISION  = 2
 
-# Choose static (L) or dynamic (D) version of C library
-LIBC      = L
-#LIBC      = D
-
 # Choose debug or optimized build
-#CFLAGS   = -W2 -Zi -DDEBUG -D_DEBUG -M$(LIBC)d
-CFLAGS    = -Ox2 -G5 -Gi- -FAsc -M$(LIBC)
+#CFLAGS   = -W2 -Zi -DDEBUG
+CFLAGS    = -Ox2 -FAsc -EHsc
 
 CXX       = cl
 RC        = rc
 ALLCFLAGS = -I. -DWIN32 -DSTRICT -D__i386 $(CFLAGS)
-ALLSCCFLAGS = -DFRODO_SC -DBATCH_CIA_CYCLES $(ALLCFLAGS)
-#ALLSCCFLAGS = -DFRODO_SC $(ALLCFLAGS)
-ALLPCCFLAGS = -DPRECISE_CPU_CYCLES=1 -DPRECISE_CIA_CYCLES=1 -DPC_IS_POINTER=0 $(ALLCFLAGS)
+ALLSCCFLAGS = $(ALLCFLAGS)
 LDFLAGS   = $(ALLCFLAGS)
-LIBRARIES = user32.lib kernel32.lib gdi32.lib ddraw.lib dsound.lib winmm.lib comctl32.lib comdlg32.lib shell32.lib
+LIBRARIES = user32.lib kernel32.lib gdi32.lib dsound.lib winmm.lib comctl32.lib comdlg32.lib shell32.lib
 #PROFILE  = /link /profile
 
 ## Files
 OBJS   = main.obj Display.obj Prefs.obj SID.obj REU.obj IEC.obj 1541fs.obj \
-         1541d64.obj 1541t64.obj 1541job.obj SAM.obj ndir.obj Frodo.res
-SLOBJS = $(OBJS) C64.obj CPUC64.obj VIC.obj CIA.obj CPU1541.obj
+         1541d64.obj 1541t64.obj 1541job.obj SAM.obj ndir.obj redpill.obj Frodo.res
 SCOBJS = $(OBJS) C64_SC.obj CPUC64_SC.obj VIC_SC.obj CIA_SC.obj CPU1541_SC.obj CPU_common.obj
-PCOBJS = $(OBJS) C64_PC.obj CPUC64_PC.obj VIC.obj CIA.obj CPU1541_PC.obj
-
-Frodo: Frodo.exe
-
-Frodo.exe: $(SLOBJS)
-	$(CXX) -FeFrodo.exe $(SLOBJS) $(LDFLAGS) $(LIBRARIES)
-	copy Frodo.exe ..
 
 FrodoSC: FrodoSC.exe
 
@@ -41,21 +27,15 @@ FrodoSC.exe: $(SCOBJS)
 	$(CXX) -FeFrodoSC.exe $(SCOBJS) $(LDFLAGS) $(LIBRARIES) $(PROFILE)
 	copy FrodoSC.exe ..
 
-FrodoPC: FrodoPC.exe
-
-FrodoPC.exe: $(PCOBJS)
-	$(CXX) -FeFrodoPC.exe $(PCOBJS) $(LDFLAGS) $(LIBRARIES)
-	copy FrodoPC.exe ..
-
 Frodo.res: Frodo.rc Frodo.ico
 	$(RC) Frodo.rc
 
-all: Frodo FrodoSC FrodoPC
+all: FrodoSC
 
 clean:
-	rm -f $(SLOBJS) $(SCOBJS) $(PCOBJS)
-	rm -f Frodo.exe FrodoSC.exe FrodoPC.exe
-	rm -f *.ilk *.pdb *.cod *.nms *.res *.aps
+	del $(SCOBJS)
+	del FrodoSC.exe
+	del *.ilk *.pdb *.cod *.nms *.res *.aps
 
 .cpp.obj:
 	$(CXX) $(ALLCFLAGS) -o $@ -c $*.cpp
@@ -63,7 +43,7 @@ clean:
 .c.obj:
 	$(CXX) $(ALLCFLAGS) -o $@ -c $*.c
        
-C64_SC.obj: C64.cpp C64.h C64_WIN32.h CmdPipe.h CPUC64.h CPU1541.h VIC.h SID.h CIA.h REU.h IEC.h 1541job.h Display.h Prefs.h
+C64_SC.obj: C64.cpp C64.h C64_WIN32.h CPUC64.h CPU1541.h VIC.h SID.h CIA.h REU.h IEC.h 1541job.h Display.h Prefs.h
 	$(CXX) $(ALLSCCFLAGS) -Fo$@ -c $*.cpp
 
 CPUC64_SC.obj: CPUC64_SC.cpp CPUC64.h CPU_emulcycle.h CPU_common.h C64.h VIC.h SID.h CIA.h REU.h IEC.h Display.h Version.h
@@ -78,19 +58,9 @@ VIC_SC.obj: VIC_SC.cpp VIC.h C64.h CPUC64.h Display.h Prefs.h
 CIA_SC.obj: CIA_SC.cpp CIA.h CPUC64.h CPU1541.h VIC.h Prefs.h
 	$(CXX) $(ALLSCCFLAGS) -Fo$@ -c $*.cpp
 
-C64_PC.obj: C64.cpp C64.h C64_WIN32.h CmdPipe.h CPUC64.h CPU1541.h VIC.h SID.h CIA.h REU.h IEC.h 1541job.h Display.h Prefs.h
-	$(CXX) $(ALLPCCFLAGS) -Fo$@ -c $*.cpp
-
-CPUC64_PC.obj: CPUC64.cpp CPUC64.h CPU_emulline.h CPU_common.h C64.h VIC.h SID.h CIA.h REU.h IEC.h Display.h Version.h
-	$(CXX) $(ALLPCCFLAGS) -DPC_IS_POINTER=0 -Fo$@ -c $*.cpp
-
-CPU1541_PC.obj: CPU1541_PC.cpp CPU1541.h CPU_emulline.h CPU_common.h 1541job.h C64.h CIA.h Display.h
-	$(CXX) $(ALLPCCFLAGS) -Fo$@ -c $*.cpp
-
 ## Dependencies
 main.obj: main.cpp main.h main_WIN32.h C64.h Display.h Prefs.h SAM.h
-C64.obj: C64.cpp C64.h C64_WIN32.h CmdPipe.h CPUC64.h CPU1541.h VIC.h SID.h CIA.h REU.h IEC.h 1541job.h Display.h Prefs.h
-CmdPipe.obj: CmdPipe.h
+C64.obj: C64.cpp C64.h C64_WIN32.h CPUC64.h CPU1541.h VIC.h SID.h CIA.h REU.h IEC.h 1541job.h Display.h Prefs.h
 Display.obj: Display.cpp Display.h Display_WIN32.h main.h Prefs.h Version.h resource.h
 Prefs.obj: Prefs.cpp Prefs.h Prefs_WIN32.h Display.h main.h resource.h
 CPUC64.obj: CPUC64.cpp CPUC64.h CPU_emulline.h C64.h VIC.h SID.h CIA.h REU.h IEC.h Display.h Version.h

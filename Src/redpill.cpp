@@ -18,26 +18,39 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <sys/mman.h>
 #include "sysdeps.h"
 #include "redpill.h"
+#ifdef WIN32
+#include <windows.h>
+#else
+#include <sys/mman.h>
 
 #define WHITE "\x1b[1;37m"
 #define GREEN "\x1b[1;32m"
 #define RED "\x1b[1;31m"
 #define NOCOLOR "\x1b[0m"
-
+#endif
 
 void quit(const char *msg)
 {
+#ifdef WIN32
+	MessageBox(NULL, msg, "REDPILL FAIL", MB_OK);
+#else
 	printf(RED "FAIL.\n" NOCOLOR);
 	perror(msg);
 	exit(EXIT_FAILURE);
+#endif
 }
 
 
 uint8* shm_new(int size, const char *sid)
 {
+#ifdef WIN32
+	HANDLE hFileMap = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, size, sid);
+	if (hFileMap == NULL)
+		quit("Shared memory failed!");
+	return (uint8*)MapViewOfFile(hFileMap, FILE_MAP_WRITE, 0,0,0);
+#else
 	printf(">Allocating shared memory: " WHITE "%s" NOCOLOR " = %d bytes, ",sid,size);
 
 	int fd = shm_open(sid, O_CREAT|O_RDWR, S_IRUSR|S_IWUSR);
@@ -51,16 +64,21 @@ uint8* shm_new(int size, const char *sid)
 
 	printf(GREEN "OK\n" NOCOLOR);
 	return (uint8*) ptr;
+#endif
 }
 
 
 void shm_delete(const char *sid)
 {
+#ifdef WIN32
+//TODO
+#else
 	printf(">Releasing shared memory: %s, ",sid);
 	if(shm_unlink(sid) == -1)
 		printf(RED "FAIL\n" NOCOLOR);
 	else
 		printf(GREEN "OK\n" NOCOLOR);
+#endif
 }
 
 

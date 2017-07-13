@@ -141,3 +141,11 @@
 
 /* Define if you have the <values.h> header file.  */
 /* #undef HAVE_VALUES_H */
+
+#define SIZEOF_VOID_P 4
+typedef unsigned char UBYTE;
+typedef signed __int16 SWORD;
+typedef unsigned __int16 UWORD;
+
+#define Debug(...)
+#define DebugResult(...)

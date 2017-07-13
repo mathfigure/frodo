@@ -89,3 +89,13 @@ void Frodo::load_rom_files()
 #include "main_WIN32.h"
 #endif
 
+
+/*
+ *  Determine whether path name refers to a directory
+ */
+
+bool IsDirectory(const char *path)
+{
+	struct stat st;
+	return stat(path, &st) == 0 && S_ISDIR(st.st_mode);
+}

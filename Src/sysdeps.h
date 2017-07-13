@@ -107,7 +107,9 @@ using std::vector;
 #  include <sys/dir.h>
 # endif
 # if HAVE_NDIR_H
-#  include <ndir.h>
+extern "C" {
+#  include "ndir.h"
+}
 # endif
 #endif
 
