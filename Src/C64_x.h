@@ -217,11 +217,11 @@ void C64::VBlank(bool draw_frame)
 		}
 		tv.tv_sec -= tv_start.tv_sec;
 		double elapsed_time = (double)tv.tv_sec * 1000000 + tv.tv_usec;
-		speed_index = 20000 / (elapsed_time + 1) * ThePrefs.SkipFrames * 100;
+		speed_index = 20000 / (elapsed_time + 1) * 100;
 
 		// Limit speed to 100% if desired
 		if ((speed_index > 100) && ThePrefs.LimitSpeed) {
-			Delay_usec((unsigned long)(ThePrefs.SkipFrames * 20000 - elapsed_time));
+			Delay_usec((unsigned long)(20000 - elapsed_time));
 			speed_index = 100;
 		}
 

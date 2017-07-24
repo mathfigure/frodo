@@ -39,11 +39,6 @@ Prefs ThePrefsOnDisk;
 
 Prefs::Prefs()
 {
-	NormalCycles = 63;
-	BadLineCycles = 23;
-	CIACycles = 63;
-	FloppyCycles = 64;
-	SkipFrames = 1;
 	LatencyMin = 80;
 	LatencyMax = 120;
 	LatencyAvg = 280;
@@ -69,7 +64,6 @@ Prefs::Prefs()
 	JoystickSwap = false;
 	LimitSpeed = true;
 	FastReset = false;
-	CIAIRQHack = false;
 	MapSlash = true;
 	Emul1541Proc = false;
 	SIDFilters = true;
@@ -93,11 +87,6 @@ Prefs::Prefs()
 bool Prefs::operator==(const Prefs &rhs) const
 {
 	return (1
-		&& NormalCycles == rhs.NormalCycles
-		&& BadLineCycles == rhs.BadLineCycles
-		&& CIACycles == rhs.CIACycles
-		&& FloppyCycles == rhs.FloppyCycles
-		&& SkipFrames == rhs.SkipFrames
 		&& LatencyMin == rhs.LatencyMin
 		&& LatencyMax == rhs.LatencyMax
 		&& LatencyAvg == rhs.LatencyAvg
@@ -119,7 +108,6 @@ bool Prefs::operator==(const Prefs &rhs) const
 		&& JoystickSwap == rhs.JoystickSwap
 		&& LimitSpeed == rhs.LimitSpeed
 		&& FastReset == rhs.FastReset
-		&& CIAIRQHack == rhs.CIAIRQHack
 		&& MapSlash == rhs.MapSlash
 		&& Emul1541Proc == rhs.Emul1541Proc
 		&& SIDFilters == rhs.SIDFilters
@@ -148,8 +136,6 @@ bool Prefs::operator!=(const Prefs &rhs) const
 
 void Prefs::Check(void)
 {
-	if (SkipFrames <= 0) SkipFrames = 1;
-
 	if (SIDType < SIDTYPE_NONE || SIDType > SIDTYPE_SIDCARD)
 		SIDType = SIDTYPE_NONE;
 
@@ -173,17 +159,7 @@ void Prefs::Load(const char *filename)
 	if ((file = fopen(filename, "r")) != NULL) {
 		while(fgets(line, 255, file)) {
 			if (sscanf(line, "%s = %s\n", keyword, value) == 2) {
-				if (!strcmp(keyword, "NormalCycles"))
-					NormalCycles = atoi(value);
-				else if (!strcmp(keyword, "BadLineCycles"))
-					BadLineCycles = atoi(value);
-				else if (!strcmp(keyword, "CIACycles"))
-					CIACycles = atoi(value);
-				else if (!strcmp(keyword, "FloppyCycles"))
-					FloppyCycles = atoi(value);
-				else if (!strcmp(keyword, "SkipFrames"))
-					SkipFrames = atoi(value);
-				else if (!strcmp(keyword, "LatencyMin"))
+				if (!strcmp(keyword, "LatencyMin"))
 					LatencyMin = atoi(value);
 				else if (!strcmp(keyword, "LatencyMax"))
 					LatencyMax = atoi(value);
@@ -241,8 +217,6 @@ void Prefs::Load(const char *filename)
 					LimitSpeed = !strcmp(value, "TRUE");
 				else if (!strcmp(keyword, "FastReset"))
 					FastReset = !strcmp(value, "TRUE");
-				else if (!strcmp(keyword, "CIAIRQHack"))
-					CIAIRQHack = !strcmp(value, "TRUE");
 				else if (!strcmp(keyword, "MapSlash"))
 					MapSlash = !strcmp(value, "TRUE");
 				else if (!strcmp(keyword, "Emul1541Proc"))
@@ -289,11 +263,6 @@ bool Prefs::Save(const char *filename)
 
 	Check();
 	if ((file = fopen(filename, "w")) != NULL) {
-		fprintf(file, "NormalCycles = %d\n", NormalCycles);
-		fprintf(file, "BadLineCycles = %d\n", BadLineCycles);
-		fprintf(file, "CIACycles = %d\n", CIACycles);
-		fprintf(file, "FloppyCycles = %d\n", FloppyCycles);
-		fprintf(file, "SkipFrames = %d\n", SkipFrames);
 		fprintf(file, "LatencyMin = %d\n", LatencyMin);
 		fprintf(file, "LatencyMax = %d\n", LatencyMax);
 		fprintf(file, "LatencyAvg = %d\n", LatencyAvg);
@@ -344,7 +313,6 @@ bool Prefs::Save(const char *filename)
 		fprintf(file, "JoystickSwap = %s\n", JoystickSwap ? "TRUE" : "FALSE");
 		fprintf(file, "LimitSpeed = %s\n", LimitSpeed ? "TRUE" : "FALSE");
 		fprintf(file, "FastReset = %s\n", FastReset ? "TRUE" : "FALSE");
-		fprintf(file, "CIAIRQHack = %s\n", CIAIRQHack ? "TRUE" : "FALSE");
 		fprintf(file, "MapSlash = %s\n", MapSlash ? "TRUE" : "FALSE");
 		fprintf(file, "Emul1541Proc = %s\n", Emul1541Proc ? "TRUE" : "FALSE");
 		fprintf(file, "SIDFilters = %s\n", SIDFilters ? "TRUE" : "FALSE");

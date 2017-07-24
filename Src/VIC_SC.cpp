@@ -1286,7 +1286,7 @@ bool MOS6569::EmulateCycle(void)
 				lp_triggered = vblanking = false;
 
 				if (!(frame_skipped = --skip_counter))
-					skip_counter = ThePrefs.SkipFrames;
+					skip_counter = 1;
 
 				the_c64->VBlank(!frame_skipped);
 

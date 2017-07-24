@@ -995,16 +995,6 @@ long C64Display::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 				PostMessage(hWnd, WM_COMMAND, ID_TOOLS_PAUSE, 0);
 				break;
 
-			case KEY_KPPLUS:
-				if (ThePrefs.SkipFrames < 10)
-					ThePrefs.SkipFrames++;
-				break;
-
-			case KEY_KPMINUS:
-				if (ThePrefs.SkipFrames > 1)
-					ThePrefs.SkipFrames--;
-				break;
-
 			case KEY_KPMULT:
 				ThePrefs.LimitSpeed = !ThePrefs.LimitSpeed;
 				break;

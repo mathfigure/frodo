@@ -208,7 +208,7 @@ void C64::CheckTimerChange()
 	// Make sure the timer interval matches the preferences.
 	if (!ThePrefs.LimitSpeed && timer_every == 0)
 		return;
-	if (ThePrefs.LimitSpeed && ThePrefs.SkipFrames == timer_every)
+	if (ThePrefs.LimitSpeed && timer_every == 1)
 		return;
 	StopTimer();
 	StartTimer();
@@ -295,7 +295,7 @@ void C64::StartTimer()
 		StopTimer();
 		return;
 	}
-	timer_every = ThePrefs.SkipFrames;
+	timer_every = 1;
 
 	if (!timer_semaphore) {
 		timer_semaphore = CreateSemaphore(NULL, 0, 1, NULL);

@@ -155,11 +155,6 @@ void Prefs::SetupControls(int page)
 	switch (page) {
 
 	case STANDARD_PAGE:
-		SetupSpin(IDC_NORMAL_SPIN, 200, 1);
-		SetupSpin(IDC_BADLINES_SPIN, 200, 1);
-		SetupSpin(IDC_CIA_SPIN, 200, 1);
-		SetupSpin(IDC_FLOPPY_SPIN, 200, 1);
-		SetupSpin(IDC_DRAWEVERY_SPIN, 10, 1);
 		SetupComboClear(IDC_REUSIZE);
 		SetupComboAdd(IDC_REUSIZE, "None");
 		SetupComboAdd(IDC_REUSIZE, "128k");
@@ -218,11 +213,6 @@ void Prefs::SetValues(int page)
 		SetText(IDC_DEVICE10, DrivePath[2]);
 		SetText(IDC_DEVICE11, DrivePath[3]);
 
-		SetInteger(IDC_NORMAL, NormalCycles);
-		SetInteger(IDC_BADLINES, BadLineCycles);
-		SetInteger(IDC_CIA, CIACycles);
-		SetInteger(IDC_FLOPPY, FloppyCycles);
-		SetInteger(IDC_DRAWEVERY, SkipFrames);
 		switch (REUSize) {
 		case REU_NONE: str = "None"; break;
 		case REU_128K: str = "128k"; break;
@@ -240,7 +230,6 @@ void Prefs::SetValues(int page)
 		SetCheckBox(IDC_JOYSTICK2, Joystick2Port);
 		SetCheckBox(IDC_SWAPJOYSTICKS, JoystickSwap);
 		SetCheckBox(IDC_FASTRESET, FastReset);
-		SetCheckBox(IDC_CIAIRQHACK, CIAIRQHack);
 		SetCheckBox(IDC_MAPSLASH, MapSlash);
 		SetCheckBox(IDC_SIDEMULATION, SIDType == SIDTYPE_DIGITAL);
 		SetCheckBox(IDC_SIDFILTERS, SIDFilters);
@@ -288,11 +277,6 @@ void Prefs::GetValues(int page)
 		GetText(IDC_DEVICE10, DrivePath[2]);
 		GetText(IDC_DEVICE11, DrivePath[3]);
 
-		GetInteger(IDC_NORMAL, NormalCycles);
-		GetInteger(IDC_BADLINES, BadLineCycles);
-		GetInteger(IDC_CIA, CIACycles);
-		GetInteger(IDC_FLOPPY, FloppyCycles);
-		GetInteger(IDC_DRAWEVERY, SkipFrames);
 		GetText(IDC_REUSIZE, str);
 		if (strcmp(str, "None") == 0)
 			REUSize = REU_NONE;
@@ -314,7 +298,6 @@ void Prefs::GetValues(int page)
 		GetCheckBox(IDC_JOYSTICK2, Joystick2Port);
 		GetCheckBox(IDC_SWAPJOYSTICKS, JoystickSwap);
 		GetCheckBox(IDC_FASTRESET, FastReset);
-		GetCheckBox(IDC_CIAIRQHACK, CIAIRQHack);
 		GetCheckBox(IDC_MAPSLASH, MapSlash);
 		GetCheckBox(IDC_SIDEMULATION, temp);
 		SIDType = temp ? SIDTYPE_DIGITAL : SIDTYPE_NONE;

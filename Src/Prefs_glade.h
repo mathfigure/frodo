@@ -122,7 +122,6 @@ static void set_values()
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(glade_xml_get_widget(xml, "joystick_swap")), prefs->JoystickSwap);
 
 	// Options
-	gtk_spin_button_set_value(GTK_SPIN_BUTTON(glade_xml_get_widget(xml, "skip_frames")), prefs->SkipFrames);
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(glade_xml_get_widget(xml, "limit_speed")), prefs->LimitSpeed);
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(glade_xml_get_widget(xml, "fast_reset")), prefs->FastReset);
 	gtk_option_menu_set_history(GTK_OPTION_MENU(glade_xml_get_widget(xml, "reu_size")), prefs->REUSize);
@@ -167,7 +166,6 @@ static void get_values()
 	prefs->JoystickSwap = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(glade_xml_get_widget(xml, "joystick_swap")));
 
 	// Options
-	prefs->SkipFrames = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(glade_xml_get_widget(xml, "skip_frames")));
 	prefs->LimitSpeed = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(glade_xml_get_widget(xml, "limit_speed")));
 	prefs->FastReset = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(glade_xml_get_widget(xml, "fast_reset")));
 	prefs->REUSize = gtk_option_menu_get_history(GTK_OPTION_MENU(glade_xml_get_widget(xml, "reu_size")));

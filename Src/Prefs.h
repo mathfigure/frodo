@@ -68,12 +68,6 @@ public:
 	bool operator==(const Prefs &rhs) const;
 	bool operator!=(const Prefs &rhs) const;
 
-	int NormalCycles;		// Available CPU cycles in normal raster lines
-	int BadLineCycles;		// Available CPU cycles in Bad Lines
-	int CIACycles;			// CIA timer ticks per raster line
-	int FloppyCycles;		// Available 1541 CPU cycles per line
-	int SkipFrames;			// Draw every n-th frame
-
 	int DriveType[4];		// Type of drive 8..11
 	char DrivePath[4][256];	// Path for drive 8..11
 
@@ -96,7 +90,6 @@ public:
 	bool JoystickSwap;		// Swap joysticks 1<->2
 	bool LimitSpeed;		// Limit speed to 100%
 	bool FastReset;			// Skip RAM test on reset
-	bool CIAIRQHack;		// Write to CIA ICR clears IRQ
 	bool MapSlash;			// Map '/' in C64 filenames
 	bool Emul1541Proc;		// Enable processor-level 1541 emulation
 	bool SIDFilters;		// Emulate SID filters

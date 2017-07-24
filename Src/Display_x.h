@@ -639,15 +639,6 @@ void C64Display::PollKeyboard(uint8 *key_matrix, uint8 *rev_matrix, uint8 *joyst
 						joystate &= ~0x0a;
 						break;
 
-					case KEY_KP_PLUS:	// '+' on keypad: Increase SkipFrames
-						ThePrefs.SkipFrames++;
-						break;
-
-					case KEY_KP_MINUS:	// '-' on keypad: Decrease SkipFrames
-						if (ThePrefs.SkipFrames > 1)
-							ThePrefs.SkipFrames--;
-						break;
-
 					case KEY_KP_MULT:	// '*' on keypad: Toggle speed limiter
 						ThePrefs.LimitSpeed = !ThePrefs.LimitSpeed;
 						break;
