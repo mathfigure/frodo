@@ -94,8 +94,6 @@ private:
 	void do_adc(uint8 byte);
 	void do_sbc(uint8 byte);
 
-	uint8 read_emulator_id(uint16 adr);
-
 	C64 *the_c64;		// Pointer to C64 object
 
 	uint8 *ram;			// Pointer to main RAM

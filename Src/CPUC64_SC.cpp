@@ -254,10 +254,8 @@ inline uint8 MOS6510::read_byte_io(uint16 adr)
 					case 0xf:
 						if ((adr & 0xfff0) == 0xdf00)
 							return TheREU->ReadRegister(adr & 0x0f);
-						else if (adr < 0xdfa0)
-							return TheVIC->LastVICByte;
 						else
-							return read_emulator_id(adr & 0x7f);
+							return TheVIC->LastVICByte;
 				}
 			else if (char_in)
 				return char_rom[adr & 0x0fff];
@@ -294,30 +292,6 @@ uint8 MOS6510::read_byte(uint16 adr)
 		}
 	} else
 		return read_byte_io(adr);
-}
-
-
-/*
- *  $dfa0-$dfff: Emulator identification
- */
-
-const char frodo_id[0x5c] = "FRODO\r(C) CHRISTIAN BAUER";
-
-uint8 MOS6510::read_emulator_id(uint16 adr)
-{
-	switch (adr) {
-		case 0x7c:	// $dffc: revision
-			return FRODO_REVISION << 4;
-		case 0x7d:	// $dffd: version
-			return FRODO_VERSION;
-		case 0x7e:	// $dffe returns 'F' (Frodo ID)
-			return 'F';
-		case 0x7f:	// $dfff alternates between $55 and $aa
-			dfff_byte = ~dfff_byte;
-			return dfff_byte;
-		default:
-			return frodo_id[adr - 0x20];
-	}
 }
 
 
