@@ -369,10 +369,7 @@ void C64::thread_func()
 		if (have_a_break)
 			TheDisplay->WaitUntilActive();
 
-		if (ThePrefs.Emul1541Proc)
-			EmulateCyclesWith1541();
-		else
-			EmulateCyclesWithout1541();
+		EmulateCycles();
 		state_change = FALSE;
 	}
 
@@ -381,7 +378,7 @@ void C64::thread_func()
 }
 
 
-void C64::EmulateCyclesWith1541()
+void C64::EmulateCycles()
 {
 	thread_running = TRUE;
 	while (!state_change) {
@@ -393,25 +390,11 @@ void C64::EmulateCyclesWith1541()
 		TheCIA1->EmulateCycle();
 		TheCIA2->EmulateCycle();
 		TheCPU->EmulateCycle();
-		TheCPU1541->CountVIATimers(1);
-		if (!TheCPU1541->Idle)
-			TheCPU1541->EmulateCycle();
-		CycleCounter++;
-	}
-}
-
-void C64::EmulateCyclesWithout1541()
-{
-	thread_running = TRUE;
-	while (!state_change) {
-		// The order of calls is important here
-		if (TheVIC->EmulateCycle())
-			TheSID->EmulateLine();
-		TheCIA1->CheckIRQs();
-		TheCIA2->CheckIRQs();
-		TheCIA1->EmulateCycle();
-		TheCIA2->EmulateCycle();
-		TheCPU->EmulateCycle();
+		if (ThePrefs.Emul1541Proc) {
+			TheCPU1541->CountVIATimers(1);
+			if (!TheCPU1541->Idle)
+				TheCPU1541->EmulateCycle();
+		}
 		CycleCounter++;
 	}
 }

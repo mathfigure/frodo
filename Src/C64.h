@@ -125,8 +125,7 @@ private:
 	void StopTimer();
 	static void CALLBACK StaticTimeProc(UINT uID, UINT uMsg, DWORD dwUser, DWORD dw1, DWORD dw2);
 	void TimeProc(UINT id);
-	void EmulateCyclesWith1541();
-	void EmulateCyclesWithout1541();
+	void EmulateCycles();
 
 	DWORD ref_time;				// when frame count was reset
 	int skipped_frames;			// number of skipped frames
