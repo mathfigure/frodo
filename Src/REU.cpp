@@ -32,6 +32,7 @@
 #include "REU.h"
 #include "CPUC64.h"
 #include "Prefs.h"
+#include "redpill.h"
 
 
 /*
@@ -89,7 +90,7 @@ void REU::open_close_reu(int old_size, int new_size)
 
 	// Free old RAM
 	if (old_size != REU_NONE) {
-		delete[] ex_ram;
+		operator delete[] (ex_ram, "C64_EXP_REU");
 		ex_ram = NULL;
 	}
 
@@ -105,9 +106,15 @@ void REU::open_close_reu(int old_size, int new_size)
 			case REU_512K:
 				ram_size = 0x80000;
 				break;
+			case REU_2M:
+				ram_size = 0x200000;
+				break;
+			case REU_16M:
+				ram_size = 0x1000000;
+				break;
 		}
 		ram_mask = ram_size - 1;
-		ex_ram = new uint8[ram_size];
+		ex_ram = new("C64_EXP_REU") uint8[ram_size];
 
 		// Set size bit in status register
 		if (ram_size > 0x20000)

@@ -1393,6 +1393,22 @@
 				  <property name="use_underline">True</property>
 				</widget>
 			      </child>
+
+			      <child>
+				<widget class="GtkMenuItem" id="2M1">
+				  <property name="visible">True</property>
+				  <property name="label" translatable="yes">2M</property>
+				  <property name="use_underline">True</property>
+				</widget>
+			      </child>
+
+			      <child>
+				<widget class="GtkMenuItem" id="16M1">
+				  <property name="visible">True</property>
+				  <property name="label" translatable="yes">16M</property>
+				  <property name="use_underline">True</property>
+				</widget>
+			      </child>
 			    </widget>
 			  </child>
 			</widget>

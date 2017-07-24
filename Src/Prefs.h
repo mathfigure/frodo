@@ -43,7 +43,9 @@ enum {
 	REU_NONE,		// No REU
 	REU_128K,		// 128K
 	REU_256K,		// 256K
-	REU_512K		// 512K
+	REU_512K,		// 512K
+	REU_2M,			// 2M
+	REU_16M			// 16M
 };
 
 

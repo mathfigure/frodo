@@ -165,6 +165,8 @@ void Prefs::SetupControls(int page)
 		SetupComboAdd(IDC_REUSIZE, "128k");
 		SetupComboAdd(IDC_REUSIZE, "256k");
 		SetupComboAdd(IDC_REUSIZE, "512k");
+		SetupComboAdd(IDC_REUSIZE, "2M");
+		SetupComboAdd(IDC_REUSIZE, "16M");
 		break;
 
 	case WIN32_PAGE:
@@ -226,6 +228,8 @@ void Prefs::SetValues(int page)
 		case REU_128K: str = "128k"; break;
 		case REU_256K: str = "256k"; break;
 		case REU_512K: str = "512k"; break;
+		case REU_2M:   str = "2M";   break;
+		case REU_16M:  str = "16M";  break;
 		}
 		SetCombo(IDC_REUSIZE, str);
 
@@ -298,6 +302,10 @@ void Prefs::GetValues(int page)
 			REUSize = REU_256K;
 		else if (strcmp(str, "512k") == 0)
 			REUSize = REU_512K;
+		else if (strcmp(str, "2M") == 0)
+			REUSize = REU_2M;
+		else if (strcmp(str, "16M") == 0)
+			REUSize = REU_16M;
 
 		GetCheckBox(IDC_LIMITSPEED, LimitSpeed);
 		GetCheckBox(IDC_SPRITES, SpritesOn);

@@ -153,7 +153,7 @@ void Prefs::Check(void)
 	if (SIDType < SIDTYPE_NONE || SIDType > SIDTYPE_SIDCARD)
 		SIDType = SIDTYPE_NONE;
 
-	if (REUSize < REU_NONE || REUSize > REU_512K)
+	if (REUSize < REU_NONE || REUSize > REU_16M)
 		REUSize = REU_NONE;
 
 	if (DisplayType < DISPTYPE_WINDOW || DisplayType > DISPTYPE_SCREEN)
@@ -219,6 +219,10 @@ void Prefs::Load(const char *filename)
 						REUSize = REU_256K;
 					else if (!strcmp(value, "512K"))
 						REUSize = REU_512K;
+					else if (!strcmp(value, "2M"))
+						REUSize = REU_2M;
+					else if (!strcmp(value, "16M"))
+						REUSize = REU_16M;
 					else
 						REUSize = REU_NONE;
 				} else if (!strcmp(keyword, "DisplayType"))
@@ -324,6 +328,12 @@ bool Prefs::Save(const char *filename)
 				break;
 			case REU_512K:
 				fprintf(file, "512K\n");
+				break;
+			case REU_2M:
+				fprintf(file, "2M\n");
+				break;
+			case REU_16M:
+				fprintf(file, "16M\n");
 				break;
 		};
 		fprintf(file, "DisplayType = %s\n", DisplayType == DISPTYPE_WINDOW ? "WINDOW" : "SCREEN");
