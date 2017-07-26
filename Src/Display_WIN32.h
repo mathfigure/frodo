@@ -2315,7 +2315,7 @@ void C64Display::NewPrefs()
 		y_nc -= led_rows;
 	double x_scale = double(rcWindow.right - rcWindow.left)/view_x;
 	double y_scale = double(rcWindow.bottom - rcWindow.top)/view_y;
-	if (CalcViewPort() || show_leds != ThePrefs.ShowLEDs) {
+	if (CalcViewPort() || show_leds != (BOOL)ThePrefs.ShowLEDs) {
 		show_leds = ThePrefs.ShowLEDs;
 		rc.right = int(rc.left + x_scale*view_x + x_nc);
 		rc.bottom = int(rc.top + y_scale*view_y + y_nc);

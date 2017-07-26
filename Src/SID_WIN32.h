@@ -157,7 +157,7 @@ void DigitalRenderer::VBlank()
 		return;
 
 	// Delete and recreate the player if preferences have changed.
-	if (direct_sound != ThePrefs.DirectSound) {
+	if (direct_sound != (BOOL)ThePrefs.DirectSound) {
 		StopPlayer();
 		StartPlayer();
 	}

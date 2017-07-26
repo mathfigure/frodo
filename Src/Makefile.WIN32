@@ -8,9 +8,9 @@ REVISION  = 2
 #CFLAGS   = -W2 -Zi -DDEBUG
 CFLAGS    = -Ox2 -FAsc -EHsc
 
-CXX       = cl
+CXX       = @cl
 RC        = rc
-ALLCFLAGS = -I. -DWIN32 -DSTRICT -D__i386 $(CFLAGS)
+ALLCFLAGS = -nologo -I. -DWIN32 -DSTRICT -D__i386 $(CFLAGS)
 ALLSCCFLAGS = $(ALLCFLAGS)
 LDFLAGS   = $(ALLCFLAGS)
 LIBRARIES = user32.lib kernel32.lib gdi32.lib dsound.lib winmm.lib comctl32.lib comdlg32.lib shell32.lib
@@ -28,7 +28,7 @@ FrodoSC.exe: $(SCOBJS)
 	copy FrodoSC.exe ..
 
 Frodo.res: Frodo.rc Frodo.ico
-	$(RC) Frodo.rc
+	$(RC) -nologo Frodo.rc
 
 all: FrodoSC
 
@@ -38,10 +38,10 @@ clean:
 	del *.ilk *.pdb *.cod *.nms *.res *.aps
 
 .cpp.obj:
-	$(CXX) $(ALLCFLAGS) -o $@ -c $*.cpp
+	$(CXX) $(ALLCFLAGS) -c $*.cpp
 
 .c.obj:
-	$(CXX) $(ALLCFLAGS) -o $@ -c $*.c
+	$(CXX) $(ALLCFLAGS) -c $*.c
        
 C64_SC.obj: C64.cpp C64.h C64_WIN32.h CPUC64.h CPU1541.h VIC.h SID.h CIA.h REU.h IEC.h 1541job.h Display.h Prefs.h
 	$(CXX) $(ALLSCCFLAGS) -Fo$@ -c $*.cpp
