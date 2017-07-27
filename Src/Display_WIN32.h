@@ -892,9 +892,11 @@ long C64Display::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 				break;
 
 			case ID_TOOLS_SAM:
-				Pause();
-				MessageBox(hWnd, "SAM not yet implemented.", NAME, MB_OK);
-				Resume();
+				if(!full_screen) {
+					Pause();
+					SAM(TheC64);
+					Resume();
+				}
 				break;
 
 			case ID_HELP_CONTENTS:
@@ -1014,7 +1016,7 @@ long C64Display::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 				break;
 
 			case KEY_F9:
-				PostMessage(hWnd, WM_COMMAND, ID_TOOLS_INSERTNEXTDISK, 0);
+				PostMessage(hWnd, WM_COMMAND, ID_TOOLS_SAM, 0);
 				break;
 
 			case KEY_ALTENTER:
@@ -1026,7 +1028,7 @@ long C64Display::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 				break;
 
 			case KEY_F10:
-				PostMessage(hWnd, WM_CLOSE, 0, 0);
+				//PostMessage(hWnd, WM_CLOSE, 0, 0);
 				break;
 
 			case KEY_F11:

@@ -61,7 +61,7 @@ BEGIN
         MENUITEM "Reset &C64\tF12",             ID_TOOLS_RESETC64
         MENUITEM "&Insert Next Disk",           ID_TOOLS_INSERTNEXTDISK
         MENUITEM SEPARATOR
-        MENUITEM "&SAM...",                     ID_TOOLS_SAM, GRAYED
+        MENUITEM "&SAM...",                     ID_TOOLS_SAM
     END
     POPUP "&Help"
     BEGIN

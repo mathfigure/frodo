@@ -28,6 +28,12 @@
 #include "SID.h"
 #include "CIA.h"
 
+#ifdef WIN32
+#define EOL '\r'
+#else
+#define EOL '\n'
+#endif
+
 
 // Pointers to chips
 static MOS6510 *TheCPU;
@@ -62,7 +68,11 @@ static inline void SAMWriteByte(uint16 adr, uint8 byte)
 
 
 // Streams for input, output and error messages
+#ifdef WIN32
+static HANDLE fin, fout, ferr;
+#else
 static FILE *fin, *fout, *ferr;
+#endif
 
 // Input line
 #define INPUT_LENGTH 80
@@ -277,6 +287,39 @@ static void load_data(void);
 static void save_data(void);
 
 
+#ifdef WIN32
+static char* fgets(char *lpBuffer, int Length, HANDLE fin)
+{
+	unsigned long numberCharsRead;
+	ReadConsole(fin, lpBuffer, Length, &numberCharsRead, NULL);
+	return lpBuffer;
+}
+
+static int fprintf(HANDLE stream, const char *format, ...)
+{
+	va_list argptr;
+	va_start(argptr, format);
+	char out[2000];
+	vsprintf(out, format, argptr);
+	unsigned long numberCharsWritten;
+	WriteConsole(stream, out, strlen(out), &numberCharsWritten, NULL);
+	va_end(argptr);
+	return numberCharsWritten;
+}
+
+static int fflush(HANDLE buffer)
+{
+	return FlushConsoleInputBuffer(buffer);
+}
+
+static int fputc(int c, HANDLE output)
+{
+	fprintf(output, "%c", c);
+	return 0;
+}
+#endif
+
+
 /*
  *  Open and handle SAM
  */
@@ -298,10 +341,16 @@ void SAM(C64 *the_c64)
 	TheCPU->ExtConfig = (~R64.ddr | R64.pr) & 7;
 	TheCPU1541->GetState(&R1541);
 
-
+#ifdef WIN32
+	if (!AllocConsole()) return;
+	fin = GetStdHandle(STD_INPUT_HANDLE);
+	fout= GetStdHandle(STD_OUTPUT_HANDLE);
+	ferr= GetStdHandle(STD_ERROR_HANDLE);
+#else
 	fin = stdin;
 	fout = stdout;
 	ferr = stdout;
+#endif
 
 	access_1541 = false;
 	address = R64.pc;
@@ -429,7 +478,7 @@ void SAM(C64 *the_c64)
 				print_expr();
 				break;
 
-			case '\n':		// Blank line
+			case EOL:		// Blank line
 				break;
 
 			default:		// Unknown command
@@ -440,8 +489,12 @@ void SAM(C64 *the_c64)
 
 	exit_abort();
 
+#ifdef WIN32
+	FreeConsole();
+#else
 	if (fout != ferr)
 		fclose(fout);
+#endif
 
 
 	// Set CPU registers
@@ -552,7 +605,7 @@ static enum Token get_token(void)
 	while ((c = get_char()) == ' ') ;
 
 	switch (c) {
-		case '\n':
+		case EOL:
 			return the_token = T_END;
 		case '(':
 			return the_token = T_LPAREN;
@@ -610,7 +663,7 @@ static enum Token get_reg_token(void)
 	while ((c = get_char()) == ' ') ;
 
 	switch (c) {
-		case '\n':
+		case EOL:
 			return the_token = T_END;
 		case 'a':
 			return the_token = T_A;
@@ -666,7 +719,7 @@ static enum Token get_string(char *str)
 {
 	char c;
 
-	while ((c = get_char()) != '\n') {
+	while ((c = get_char()) != EOL) {
 		if (c == '"') {
 			*str = 0;
 			return T_STRING;
@@ -1467,7 +1520,7 @@ static void assemble(void)
 		c2 = get_char();
 		c3 = get_char();
 
-		if (c1 != '\n') {
+		if (c1 != EOL) {
 
 			if ((mnem = find_mnemonic(c1, c2, c3)) != M_ILLEGAL) {
 
@@ -1727,12 +1780,14 @@ static void print_expr(void)
 
 static void redir_output(void)
 {
+#ifndef WIN32
 	// Close old file
 	if (fout != ferr) {
 		fclose(fout);
 		fout = ferr;
 		return;
 	}
+#endif
 
 	// No argument given?
 	if (the_token == T_END)
