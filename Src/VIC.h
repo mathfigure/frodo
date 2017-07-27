@@ -100,7 +100,6 @@ private:
 	uint16 mc[8];				// Sprite data counters
 
 	int display_idx;			// Index of current display mode
-	int skip_counter;			// Counter for frame-skipping
 
 	long pad0;	// Keep buffers long-aligned
 	uint8 spr_coll_buf[0x180];	// Buffer for sprite-sprite collisions and priorities
@@ -108,7 +107,6 @@ private:
 
 	bool display_state;			// true: Display state, false: Idle state
 	bool border_on;				// Flag: Upper/lower border on (Frodo SC: Main border flipflop)
-	bool frame_skipped;			// Flag: Frame is being skipped
 	uint8 bad_lines_enabled;	// Flag: Bad Lines enabled for this frame
 	bool lp_triggered;			// Flag: Lightpen was triggered in this frame
 

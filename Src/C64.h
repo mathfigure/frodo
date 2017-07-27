@@ -56,7 +56,7 @@ public:
 	void Resume(void);
 	void Reset(void);
 	void NMI(void);
-	void VBlank(bool draw_frame);
+	void VBlank(void);
 	void NewPrefs(Prefs *prefs);
 	void PatchKernal(bool fast_reset, bool emul_1541_proc);
 	void SaveRAM(char *filename);

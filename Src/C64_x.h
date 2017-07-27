@@ -177,7 +177,7 @@ void C64::Run(void)
  *  Vertical blank: Poll keyboard and joysticks, update window
  */
 
-void C64::VBlank(bool draw_frame)
+void C64::VBlank()
 {
 	// Poll keyboard
 	TheDisplay->PollKeyboard(TheCIA1->KeyMatrix, TheCIA1->RevMatrix, &joykey);
@@ -205,8 +205,8 @@ void C64::VBlank(bool draw_frame)
 	TheCIA2->CountTOD();
 
 	// Update window if needed
-	if (draw_frame) {
-    	TheDisplay->Update();
+	{
+		TheDisplay->Update();
 
 		// Calculate time between VBlanks, display speedometer
 		struct timeval tv;

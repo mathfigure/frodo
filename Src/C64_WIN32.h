@@ -132,7 +132,7 @@ void C64::Resume()
  *  Vertical blank: Poll keyboard and joysticks, update window
  */
 
-void C64::VBlank(bool draw_frame)
+void C64::VBlank()
 {
 	//Debug("C64::VBlank\n");
 
@@ -168,7 +168,7 @@ void C64::VBlank(bool draw_frame)
 
 	// Update the window if needed.
 	frame++;
-	if (draw_frame) {
+	{
 
 		// Synchronize to the timer if limiting the speed.
 		if (ThePrefs.LimitSpeed) {
@@ -312,7 +312,7 @@ void C64::StartTimer()
 			resolution = 0;
 		}
 
-		timer_id = timeSetEvent(timer_every*FRAME_INTERVAL, resolution, StaticTimeProc, (DWORD) this, TIME_PERIODIC);
+		timer_id = timeSetEvent(FRAME_INTERVAL, resolution, StaticTimeProc, (DWORD) this, TIME_PERIODIC);
 		if (!timer_id)
 			Debug("timeSetEvent failed\n");
 	}

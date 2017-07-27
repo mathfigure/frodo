@@ -186,9 +186,6 @@ MOS6569::MOS6569(C64 *c64, C64Display *disp, MOS6510 *CPU, uint8 *RAM, uint8 *Ch
 		spr_ptr[i] = 0;
 	}
 
-	frame_skipped = false;
-	skip_counter = 1;
-
 	memset(spr_coll_buf, 0, 0x180);
 	memset(fore_mask_buf, 0, 0x180/8);
 
@@ -1263,7 +1260,7 @@ bool MOS6569::EmulateCycle(void)
 				is_bad_line = (raster_y >= FIRST_DMA_LINE && raster_y <= LAST_DMA_LINE && ((raster_y & 7) == y_scroll) && bad_lines_enabled);
 
 				// Don't draw all lines, hide some at the top and bottom
-				draw_this_line = (raster_y >= FIRST_DISP_LINE && raster_y <= LAST_DISP_LINE && !frame_skipped);
+				draw_this_line = (raster_y >= FIRST_DISP_LINE && raster_y <= LAST_DISP_LINE);
 			}
 
 			// First sample of border state
@@ -1285,10 +1282,7 @@ bool MOS6569::EmulateCycle(void)
 				ref_cnt = 0xff;
 				lp_triggered = vblanking = false;
 
-				if (!(frame_skipped = --skip_counter))
-					skip_counter = 1;
-
-				the_c64->VBlank(!frame_skipped);
+				the_c64->VBlank();
 
 				// Get bitmap pointer for next frame. This must be done
 				// after calling the_c64->VBlank() because the preferences
