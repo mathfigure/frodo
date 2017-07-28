@@ -11,7 +11,7 @@ git clone -b frodo-redpill https://github.com/mathfigure/frodo
 ### Build
 ```bash
 cd frodo/Src
-./autogen.sh CFLAGS=-O2
+./autogen.sh
 make
 ```
 
@@ -35,7 +35,7 @@ gst-launch-1.0 multifilesrc location=/dev/shm/C64_RAM ! videoparse width=256 hei
 ```
 
 
-## Platform: windows (WIN32)
+## Platform: Windows (WIN32)
 Start Visual Studio Command Prompt and type:
 ```bash
 cd frodo\src
