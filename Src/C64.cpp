@@ -645,6 +645,42 @@ bool C64::LoadSnapshot(char *filename)
 }
 
 
+/*
+ *  Import a .prg file directly into the C64 RAM
+ */
+
+bool C64::ImportPRG(char *filename)
+{
+	FILE *f;
+	if ((f = fopen(filename, "rb")) != NULL) {
+		fseek(f, 0, SEEK_END);
+		int file_size = ftell(f);
+		fseek(f, 0, SEEK_SET);
+		if(file_size > 2) {
+			uint8 c0 = fgetc(f);
+			uint8 c1 = fgetc(f);
+			int addr = (c1 << 8) | c0;
+			int end = addr + file_size - 2;
+			if(end <= 0x10000) {
+				for(int i = 0; i < file_size - 2; i++)
+					RAM[addr + i] = fgetc(f);
+				fclose(f);
+				// patch for basic programs
+				if(addr == 0x801) {
+					RAM[0x2b] = RAM[0xac] = 0x01;
+					RAM[0x2c] = RAM[0xad] = 0x08;
+					RAM[0x2d] = RAM[0x2f] = RAM[0x31] = RAM[0xae] = (uint8)(end & 0xff);
+					RAM[0x2e] = RAM[0x30] = RAM[0x32] = RAM[0xaf] = (uint8)(end >> 8);
+				}
+				return true;
+			}
+		}
+		fclose(f);
+	}
+	return false;
+}
+
+
 
 
 #ifdef __unix

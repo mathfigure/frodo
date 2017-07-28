@@ -656,6 +656,9 @@ BOOL C64Display::MakeWindow()
 	GetWindowRect(hwnd, &rcLast);
 	SetRect(&rcScreen, 0, 0, GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN));
 
+	// Enable drag & drop.
+	SetWindowLong(hwnd, GWL_EXSTYLE, WS_EX_ACCEPTFILES);
+
 	// Load cursors.
 	invisible_cursor = LoadCursor(hInstance, MAKEINTRESOURCE(IDC_INVISIBLE));
 	arrow_cursor = LoadCursor(0, MAKEINTRESOURCE(IDC_ARROW));
@@ -763,6 +766,45 @@ long C64Display::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 				MoveWindow(hwnd, rc.left - misalignment,
 					rc.top, rc.right - rc.left,
 					rc.bottom - rc.top, TRUE);
+			}
+		}
+		break;
+
+	// supports dirs and files: .fss .t64 .d64, and as .prg anything else except .txt
+	case WM_DROPFILES:
+		{
+			HDROP hDrop = (HDROP)wParam;
+			char sFilename[MAX_PATH];
+			DragQueryFile(hDrop, 0, sFilename, sizeof(sFilename));
+			int length = strlen(sFilename);
+			char *suffix = sFilename + length - 4;
+
+			int drv_type = -1;
+			struct stat statbuf;
+			stat(sFilename, &statbuf);
+			if (S_ISDIR(statbuf.st_mode))
+				drv_type = DRVTYPE_DIR;
+			else if (length >= 4 && stricmp(suffix, ".t64") == 0)
+				drv_type = DRVTYPE_T64;
+			else if (length >= 4 && stricmp(suffix, ".d64") == 0)
+				drv_type = DRVTYPE_D64;
+
+			if (drv_type != -1) {
+				// Set new prefs
+				Prefs *prefs = new Prefs(ThePrefs);
+				prefs->DriveType[0] = drv_type;
+				Pause();
+				strcpy(prefs->DrivePath[0], sFilename);
+				TheC64->NewPrefs(prefs);
+				ThePrefs = *prefs;
+				Resume();
+				delete prefs;
+			} else if (length >= 4 && stricmp(suffix, ".fss") == 0) {
+				// Load snapshot
+				TheC64->LoadSnapshot(sFilename);
+			} else if (length >= 4 && stricmp(suffix, ".txt") != 0) {  // ignore .txt files
+				// Import prg file
+				TheC64->ImportPRG(sFilename);
 			}
 		}
 		break;

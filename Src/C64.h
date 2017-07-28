@@ -59,6 +59,7 @@ public:
 	void VBlank(void);
 	void NewPrefs(Prefs *prefs);
 	void PatchKernal(bool fast_reset, bool emul_1541_proc);
+	bool ImportPRG(char* filename);
 	void SaveRAM(char *filename);
 	void SaveSnapshot(char *filename);
 	bool LoadSnapshot(char *filename);
