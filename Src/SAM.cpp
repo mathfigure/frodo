@@ -241,6 +241,7 @@ static enum Token get_token(void);
 static enum Token get_reg_token(void);
 static uint16 get_number(void);
 static enum Token get_string(char *str);
+static void prev_line(void);
 
 static bool expression(uint16 *number);	// Parser
 static bool term(uint16 *number);
@@ -316,6 +317,24 @@ static int fputc(int c, HANDLE output)
 {
 	fprintf(output, "%c", c);
 	return 0;
+}
+
+static void prev_line(void)
+{
+	COORD p;
+	CONSOLE_SCREEN_BUFFER_INFO info;
+	HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
+	GetConsoleScreenBufferInfo(h, &info);
+	p.X = 0;
+	p.Y = info.dwCursorPosition.Y - 1;
+	SetConsoleCursorPosition(h, p);
+	// TODO: clear the line (minor issue)
+}
+#else
+static void prev_line()
+{
+	// move cursor up, clear the line, return to the beginning of the line
+	printf("\33[A\33[2K\r");
 }
 #endif
 
@@ -1545,7 +1564,8 @@ static void assemble(void)
 					if (find_opcode(mnem, mode, &opcode)) {
 
 						// Print disassembled line
-						fprintf(fout, "\v%04lx:", address);
+						prev_line();
+						fprintf(fout, "%04lx:", address);
 						disass_line(address, opcode, arg & 0xff, arg >> 8);
 
 						switch (adr_length[mode]) {
