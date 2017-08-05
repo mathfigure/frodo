@@ -2051,6 +2051,8 @@ BOOL C64Display::CopySurface(RECT &rcWork)
 			break;
 		if (ddrval == DDERR_SURFACELOST) {
 			ddrval = pPrimary->Restore();
+			if (ddrval == DD_OK)
+				ddrval = pWork->Restore();
 			if (ddrval != DD_OK) {
 				DebugResult("CopySurface Restore failed", ddrval);
 				return FALSE;
