@@ -115,6 +115,7 @@ private:
 #define KEY_PAUSE	277
 #define KEY_ALTENTER 	278
 #define KEY_CTRLENTER	279
+#define KEY_PAGE_UP	280
 
 #define VK_bracketleft	0xdb
 #define VK_bracketright	0xdd
@@ -1073,7 +1074,7 @@ long C64Display::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 				//PostMessage(hWnd, WM_CLOSE, 0, 0);
 				break;
 
-			case KEY_F11:
+			case KEY_PAGE_UP:
 				if (!paused)
 					TheC64->NMI();
 				break;
@@ -1255,8 +1256,8 @@ int C64Display::VirtKey2C64(int virtkey, DWORD keydata)
 	case VK_PAUSE: return KEY_PAUSE;
 
 	case VK_BACK: return MATRIX(0,0);
-	case VK_DELETE: return ext ? MATRIX(0,0) : /*KP*/ KEY_KPPERIOD;
-	case VK_TAB: return -1;
+	case VK_DELETE: return ext ? MATRIX(6,6) : /*KP*/ KEY_KPPERIOD;
+	case VK_TAB: return MATRIX(7,2);
 	case VK_RETURN:
 		if ((GetKeyState(VK_MENU) & 0x8000))
 			return KEY_ALTENTER;
@@ -1265,16 +1266,16 @@ int C64Display::VirtKey2C64(int virtkey, DWORD keydata)
 		return ext ? /*KP*/ MATRIX(0,1) : MATRIX(0,1);
 	case VK_SPACE: return MATRIX(7,4);
 	case VK_ESCAPE: return MATRIX(7,7);
-	case VK_INSERT: if (!ext) numlock = 0; return ext ? MATRIX(0,0) | 0x80 : /*KP*/ KEY_FIRE;
+	case VK_INSERT: if (!ext) numlock = 0; return ext ? MATRIX(6,0) : /*KP*/ KEY_FIRE;
 	case VK_HOME: if (!ext) numlock = 0; return ext ? MATRIX(6,3) : /*KP*/ KEY_JUPLF;
-	case VK_END: if (!ext) numlock = 0; return ext ? MATRIX(6,0) : /*KP*/ KEY_JDNLF;
-	case VK_PRIOR: if (!ext) numlock = 0; return ext ? MATRIX(6,6) : /*KP*/ KEY_JUPRT;
-	case VK_NEXT: if (!ext) numlock = 0; return ext ? MATRIX(6,5) : /*KP*/ KEY_JDNRT;
+	case VK_END: if (!ext) numlock = 0; return ext ? -1 : /*KP*/ KEY_JDNLF;
+	case VK_PRIOR: if (!ext) numlock = 0; return ext ? KEY_PAGE_UP : /*KP*/ KEY_JUPRT;
+	case VK_NEXT: if (!ext) numlock = 0; return ext ? -1 : /*KP*/ KEY_JDNRT;
 	case VK_CLEAR: return KEY_CENTER;
 
 	case VK_SHIFT: return sc == 0x36 ? /*R*/ MATRIX(6,4) : MATRIX(1,7);
-	case VK_CONTROL: return ext ? /*R*/ MATRIX(7,5) : MATRIX(7,2);
-	case VK_MENU: return ext ? /*R*/ MATRIX(7,5) : MATRIX(7,5);
+	case VK_CONTROL: return ext ? /*R*/ -1 : MATRIX(7,5);
+	case VK_MENU: return -1; /* future use */
 
 	case VK_UP: if (!ext) numlock = 0; return ext ? MATRIX(0,7) | 0x80 : /*KP*/ KEY_JUP;
 	case VK_DOWN: if (!ext) numlock = 0; return ext ? MATRIX(0,7) : /*KP*/ KEY_JDN;
@@ -1311,7 +1312,7 @@ int C64Display::VirtKey2C64(int virtkey, DWORD keydata)
 	case VK_comma: return MATRIX(5,7);
 	case VK_period: return MATRIX(5,4);
 	case VK_quote: return MATRIX(6,2);
-	case VK_backslash: return MATRIX(6,6);
+	case VK_backslash: return MATRIX(6,5);
 
 	case 'A': result = MATRIX(1,2); break;
 	case 'B': result = MATRIX(3,4); break;

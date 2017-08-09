@@ -570,7 +570,7 @@ static void translate_key(SDLKey key, bool key_up, uint8 *key_matrix, uint8 *rev
 
 		case SDLK_SPACE: c64_key = MATRIX(7,4); break;
 		case SDLK_BACKQUOTE: c64_key = MATRIX(7,1); break;
-		case SDLK_BACKSLASH: c64_key = MATRIX(6,6); break;
+		case SDLK_BACKSLASH: c64_key = MATRIX(6,5); break;
 		case SDLK_COMMA: c64_key = MATRIX(5,7); break;
 		case SDLK_PERIOD: c64_key = MATRIX(5,4); break;
 		case SDLK_MINUS: c64_key = MATRIX(5,0); break;
@@ -583,19 +583,17 @@ static void translate_key(SDLKey key, bool key_up, uint8 *key_matrix, uint8 *rev
 
 		case SDLK_ESCAPE: c64_key = MATRIX(7,7); break;
 		case SDLK_RETURN: c64_key = MATRIX(0,1); break;
-		case SDLK_BACKSPACE: case SDLK_DELETE: c64_key = MATRIX(0,0); break;
-		case SDLK_INSERT: c64_key = MATRIX(6,3); break;
+		case SDLK_BACKSPACE: c64_key = MATRIX(0,0); break;
+		case SDLK_DELETE: c64_key = MATRIX(6,6); break;
+		case SDLK_INSERT: c64_key = MATRIX(6,0); break;
 		case SDLK_HOME: c64_key = MATRIX(6,3); break;
-		case SDLK_END: c64_key = MATRIX(6,0); break;
-		case SDLK_PAGEUP: c64_key = MATRIX(6,0); break;
-		case SDLK_PAGEDOWN: c64_key = MATRIX(6,5); break;
 
-		case SDLK_LCTRL: case SDLK_TAB: c64_key = MATRIX(7,2); break;
-		case SDLK_RCTRL: c64_key = MATRIX(7,5); break;
+		case SDLK_LCTRL: c64_key = MATRIX(7,5); break;
+		case SDLK_TAB: c64_key = MATRIX(7,2); break;
 		case SDLK_LSHIFT: c64_key = MATRIX(1,7); break;
 		case SDLK_RSHIFT: c64_key = MATRIX(6,4); break;
-		case SDLK_LALT: case SDLK_LMETA: c64_key = MATRIX(7,5); break;
-		case SDLK_RALT: case SDLK_RMETA: c64_key = MATRIX(7,5); break;
+		case SDLK_LALT: case SDLK_LMETA:
+		case SDLK_RALT: case SDLK_RMETA: /* future use */ break;
 
 		case SDLK_UP: c64_key = MATRIX(0,7)| 0x80; break;
 		case SDLK_DOWN: c64_key = MATRIX(0,7); break;
@@ -694,7 +692,7 @@ void C64Display::PollKeyboard(uint8 *key_matrix, uint8 *rev_matrix, uint8 *joyst
 						TheC64->Resume();
 						break;
 
-					case SDLK_F11:	// F11: NMI (Restore)
+					case SDLK_PAGEUP:	// PgUp: NMI (Restore)
 						TheC64->NMI();
 						break;
 

@@ -99,6 +99,7 @@ static const long int eventmask = (KeyPressMask|KeyReleaseMask|FocusChangeMask|E
 #define KEY_KP_MINUS 526
 #define KEY_KP_MULT 527
 #define KEY_NUM_LOCK 528
+#define KEY_PAGE_UP 529
 
 
 /*
@@ -149,24 +150,23 @@ static int kc_decode(KeySym ks)
 
 		case XK_space: return MATRIX(7,4);
 		case XK_grave: return MATRIX(7,1);
-		case XK_backslash: return MATRIX(6,6);
+		case XK_backslash: return MATRIX(6,5);
 		case XK_comma: return MATRIX(5,7);
 		case XK_period: return MATRIX(5,4);
 
 		case XK_Escape: return MATRIX(7,7);
 		case XK_Return: return MATRIX(0,1);
-		case XK_BackSpace: case XK_Delete: return MATRIX(0,0);
-		case XK_Insert: return MATRIX(6,3);
+		case XK_BackSpace: return MATRIX(0,0);
+		case XK_Delete: return MATRIX(6,6);
+		case XK_Insert: return MATRIX(6,0);
 		case XK_Home: case XK_Help: return MATRIX(6,3);
-		case XK_End: return MATRIX(6,0);
-		case XK_Page_Up: return MATRIX(6,0);
-		case XK_Page_Down: return MATRIX(6,5);
-		case XK_Control_L: return MATRIX(7,2);
-		case XK_Control_R: return MATRIX(7,5);
+		case XK_Page_Up: return KEY_PAGE_UP;
+		case XK_Tab: return MATRIX(7,2);
+		case XK_Control_L: return MATRIX(7,5);
 		case XK_Shift_L: return MATRIX(1,7);
 		case XK_Shift_R: return MATRIX(6,4);
-		case XK_Alt_L: return MATRIX(7,5);
-		case XK_Alt_R: return MATRIX(7,5);
+		case XK_Alt_L:
+		case XK_Alt_R: return -1; /* future use */
 
 		case XK_Up: return MATRIX(0,7)| 0x80;
 		case XK_Down: return MATRIX(0,7);
@@ -599,7 +599,7 @@ void C64Display::PollKeyboard(uint8 *key_matrix, uint8 *rev_matrix, uint8 *joyst
 						quit_requested = true;
 						break;
 
-					case KEY_F11:	// F11: NMI (Restore)
+					case KEY_PAGE_UP:	// PgUp: NMI (Restore)
 						TheC64->NMI();
 						break;
 
