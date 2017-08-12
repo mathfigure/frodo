@@ -26,13 +26,10 @@
 #define IDC_BROWSE10                    1027
 #define IDC_DEVICE11                    1028
 #define IDC_BROWSE11                    1029
-#define IDC_FULLSCREEN                  1035
-#define IDC_AUTOPAUSE                   1036
 #define IDC_SYSTEMMEMORY                1037
 #define IDC_EXCLUSIVESOUND              1038
 #define IDC_PREFSATSTARTUP              1039
 #define IDC_VIEWPORT                    1040
-#define IDC_DISPLAYMODE                 1041
 #define IDC_ALWAYSCOPY                  1042
 #define IDC_HIDECURSOR                  1043
 #define IDC_SYSTEMKEYS                  1044
@@ -63,7 +60,6 @@
 #define ID_HELP_KEYBOARD                40014
 #define ID_TOOLS_PAUSE                  40015
 #define ID_HELP_SETTINGS                40016
-#define ID_TOOLS_FULLSCREEN             40017
 #define ID_TOOLS_RESETDIRECTDRAW        40018
 #define IDC_STATIC                      -1
 

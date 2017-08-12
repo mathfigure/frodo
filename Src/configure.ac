@@ -14,7 +14,10 @@ AC_PROG_INSTALL
 PKG_PROG_PKG_CONFIG
 
 dnl Configure options.
+AC_ARG_ENABLE(sdl, [  --enable-sdl         use SDL for rendering [default=yes]], , enable_sdl=yes)
+AC_ARG_ENABLE(glade, [  --enable-glade         use Glade for menus [default=yes]], , enable_glade=yes)
 AC_ARG_ENABLE(opengl, [  --enable-opengl         use SDL/OpenGL for rendering [default=no]], , enable_opengl=no)
+
 
 dnl -fomit-frame-pointer makes things faster
 if [[ x"$GXX" = "xyes" ]]; then
@@ -24,14 +27,22 @@ fi
 AC_AIX
 AC_ISC_POSIX
 
+if [[ "x$enable_opengl" = "xyes" ]]; then
+  enable_sdl = yes
+fi
+
 dnl Checks for libraries.
-AM_PATH_SDL(1.2.0, HAVE_SDL=yes, HAVE_SDL=no)
+if [[ "x$enable_sdl" = "xyes" ]]; then
+  AM_PATH_SDL(1.2.0, HAVE_SDL=yes, HAVE_SDL=no)
+fi
 
 HAVE_GLADE=no
-PKG_CHECK_MODULES(GLADE, [libglade-2.0 libgnomeui-2.0 >= 1.110.0], HAVE_GLADE=yes)
-if [[ $HAVE_GLADE = yes ]]; then
-  AC_DEFINE(HAVE_GLADE, 1, [Glade support is enabled])
-  LDFLAGS="$LDFLAGS -Wl,-E"
+if [[ "x$enable_glade" = "xyes" ]]; then
+  PKG_CHECK_MODULES(GLADE, [libglade-2.0 libgnomeui-2.0 >= 1.110.0], HAVE_GLADE=yes)
+  if [[ $HAVE_GLADE = yes ]]; then
+    AC_DEFINE(HAVE_GLADE, 1, [Glade support is enabled])
+    LDFLAGS="$LDFLAGS -Wl,-E"
+  fi
 fi
 
 AC_PATH_XTRA

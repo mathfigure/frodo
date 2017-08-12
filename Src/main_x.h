@@ -107,10 +107,9 @@ void Frodo::ReadyToRun()
 	}
 	ThePrefs.Load(prefs_path);
 
-	// Show preferences editor
 #ifdef HAVE_GLADE
-	if (!ThePrefs.ShowEditor(true, prefs_path))
-		return;  // "Quit" clicked
+	// init glade
+	ThePrefs.ShowEditor(true, prefs_path);
 #endif
 
 	// Create and start C64

@@ -190,55 +190,7 @@ MOS6569::MOS6569(C64 *c64, C64Display *disp, MOS6510 *CPU, uint8 *RAM, uint8 *Ch
 	memset(fore_mask_buf, 0, 0x180/8);
 
 	// Preset colors to black
-	disp->InitColors(colors);
-	ec_color = b0c_color = b1c_color = b2c_color = b3c_color = mm0_color = mm1_color = colors[0];
-	for (i=0; i<8; i++) spr_color[i] = colors[0];
-}
-
-
-/*
- *  Reinitialize the colors table for when the palette has changed
- */
-
-void MOS6569::ReInitColors(void)
-{
-	int i;
-
-	// Build inverse color table.
-	uint8 xlate_colors[256];
-	memset(xlate_colors, 0, sizeof(xlate_colors));
-	for (i=0; i<16; i++)
-		xlate_colors[colors[i]] = i;
-
-	// Get the new colors.
-	the_display->InitColors(colors);
-
-	// Build color translation table.
-	for (i=0; i<256; i++)
-		xlate_colors[i] = colors[xlate_colors[i]];
-
-	// Translate all the old colors variables.
-	ec_color = colors[ec];
-	b0c_color = colors[b0c];
-	b1c_color = colors[b1c];
-	b2c_color = colors[b2c];
-	b3c_color = colors[b3c];
-	mm0_color = colors[mm0];
-	mm1_color = colors[mm1];
-	for (i=0; i<8; i++)
-		spr_color[i] = colors[sc[i]];
-
-	// Translate the border color sample buffer.
-	for (unsigned x = 0; x < sizeof(border_color_sample); x++)
-		border_color_sample[x] = xlate_colors[border_color_sample[x]];
-
-	// Translate the chunky buffer.
-	uint8 *scanline = the_display->BitmapBase();
-	for (int y=0; y<DISPLAY_Y; y++) {
-		for (int x=0; x<DISPLAY_X; x++)
-			scanline[x] = xlate_colors[scanline[x]];
-		scanline += xmod;
-	}
+	disp->InitColors();
 }
 
 
@@ -368,25 +320,16 @@ void MOS6569::SetState(MOS6569State *vd)
 	me = vd->me; mxe = vd->mxe; mye = vd->mye; mdp = vd->mdp; mmc = vd->mmc;
 	clx_spr = vd->mm; clx_bgr = vd->md;
 
-	ec = vd->ec;
-	ec_color = colors[ec];
+	ec = vd->ec & 0xf;
+	b0c = vd->b0c & 0xf; b1c = vd->b1c & 0xf; b2c = vd->b2c & 0xf; b3c = vd->b3c & 0xf;
 
-	b0c = vd->b0c; b1c = vd->b1c; b2c = vd->b2c; b3c = vd->b3c;
-	b0c_color = colors[b0c];
-	b1c_color = colors[b1c];
-	b2c_color = colors[b2c];
-	b3c_color = colors[b3c];
-
-	mm0 = vd->mm0; mm1 = vd->mm1;
-	mm0_color = colors[mm0];
-	mm1_color = colors[mm1];
+	mm0 = vd->mm0 & 0xf; mm1 = vd->mm1 & 0xf;
 
 	sc[0] = vd->m0c; sc[1] = vd->m1c;
 	sc[2] = vd->m2c; sc[3] = vd->m3c;
 	sc[4] = vd->m4c; sc[5] = vd->m5c;
 	sc[6] = vd->m6c; sc[7] = vd->m7c;
-	for (i=0; i<8; i++)
-		spr_color[i] = colors[sc[i]];
+	for(i=0; i<8; i++) sc[i] &= 0xf;
 
 	irq_raster = vd->irq_raster;
 	vc = vd->vc;
@@ -632,17 +575,17 @@ void MOS6569::WriteRegister(uint16 adr, uint8 byte)
 			mxe = byte;
 			break;
 
-		case 0x20: ec_color = colors[ec = byte]; break;
-		case 0x21: b0c_color = colors[b0c = byte]; break;
-		case 0x22: b1c_color = colors[b1c = byte]; break;
-		case 0x23: b2c_color = colors[b2c = byte]; break;
-		case 0x24: b3c_color = colors[b3c = byte]; break;
-		case 0x25: mm0_color = colors[mm0 = byte]; break;
-		case 0x26: mm1_color = colors[mm1 = byte]; break;
+		case 0x20: ec = byte & 0x0f; break;
+		case 0x21: b0c = byte & 0x0f; break;
+		case 0x22: b1c = byte & 0x0f; break;
+		case 0x23: b2c = byte & 0x0f; break;
+		case 0x24: b3c = byte & 0x0f; break;
+		case 0x25: mm0 = byte & 0x0f; break;
+		case 0x26: mm1 = byte & 0x0f; break;
 
 		case 0x27: case 0x28: case 0x29: case 0x2a:
 		case 0x2b: case 0x2c: case 0x2d: case 0x2e:
-			spr_color[adr - 0x27] = colors[sc[adr - 0x27] = byte];
+			sc[adr - 0x27] = byte & 0x0f;
 			break;
 	}
 }
@@ -741,7 +684,7 @@ void MOS6569::graphics_access(void)
 			adr &= 0xf9ff;
 		gfx_data = read_byte(adr);
 		char_data = matrix_line[ml_index];
-		color_data = color_line[ml_index];
+		color_data = color_line[ml_index] & 0xf;
 		ml_index++;
 		vc++;
 
@@ -770,28 +713,28 @@ void MOS6569::draw_background(void)
 		case 0:		// Standard text
 		case 1:		// Multicolor text
 		case 3:		// Multicolor bitmap
-			c = b0c_color;
+			c = b0c;
 			break;
 		case 2:		// Standard bitmap
-			c = colors[last_char_data];
+			c = last_char_data;
 			break;
 		case 4:		// ECM text
 			if (last_char_data & 0x80)
 				if (last_char_data & 0x40)
-					c = b3c_color;
+					c = b3c;
 				else
-					c = b2c_color;
+					c = b2c;
 			else
 				if (last_char_data & 0x40)
-					c = b1c_color;
+					c = b1c;
 				else
-					c = b0c_color;
+					c = b0c;
 			break;
 		default:
-			c = colors[0];
+			c = 0;
 			break;
 	}
-	memset8(p, c);
+	memset8(p, c&0xf);
 }
 
 
@@ -815,51 +758,51 @@ void MOS6569::draw_graphics(void)
 	switch (display_idx) {
 
 		case 0:		// Standard text
-			c[0] = b0c_color;
-			c[1] = colors[color_data];
+			c[0] = b0c;
+			c[1] = color_data;
 			goto draw_std;
 
 		case 1:		// Multicolor text
 			if (color_data & 8) {
-				c[0] = b0c_color;
-				c[1] = b1c_color;
-				c[2] = b2c_color;
-				c[3] = colors[color_data & 7];
+				c[0] = b0c;
+				c[1] = b1c;
+				c[2] = b2c;
+				c[3] = color_data & 7;
 				goto draw_multi;
 			} else {
-				c[0] = b0c_color;
-				c[1] = colors[color_data];
+				c[0] = b0c;
+				c[1] = color_data;
 				goto draw_std;
 			}
 
 		case 2:		// Standard bitmap
-			c[0] = colors[char_data];
-			c[1] = colors[char_data >> 4];
+			c[0] = char_data & 0xf;
+			c[1] = (char_data >> 4) & 0xf;
 			goto draw_std;
 
 		case 3:		// Multicolor bitmap
-			c[0]= b0c_color;
-			c[1] = colors[char_data >> 4];
-			c[2] = colors[char_data];
-			c[3] = colors[color_data];
+			c[0]= b0c;
+			c[1] = (char_data >> 4) & 0xf;
+			c[2] = char_data & 0xf;
+			c[3] = color_data;
 			goto draw_multi;
 
 		case 4:		// ECM text
 			if (char_data & 0x80)
 				if (char_data & 0x40)
-					c[0] = b3c_color;
+					c[0] = b3c;
 				else
-					c[0] = b2c_color;
+					c[0] = b2c;
 			else
 				if (char_data & 0x40)
-					c[0] = b1c_color;
+					c[0] = b1c;
 				else
-					c[0] = b0c_color;
-			c[1] = colors[color_data];
+					c[0] = b0c;
+			c[1] = color_data;
 			goto draw_std;
 
 		case 5:		// Invalid multicolor text
-			memset8(p, colors[0]);
+			memset8(p, 0);
 			if (color_data & 8) {
 				fore_mask_ptr[0] |= ((gfx_data & 0xaa) | (gfx_data & 0xaa) >> 1) >> x_scroll;
 				fore_mask_ptr[1] |= ((gfx_data & 0xaa) | (gfx_data & 0xaa) >> 1) << (8-x_scroll);
@@ -870,13 +813,13 @@ void MOS6569::draw_graphics(void)
 			return;
 
 		case 6:		// Invalid standard bitmap
-			memset8(p, colors[0]);
+			memset8(p, 0);
 			fore_mask_ptr[0] |= gfx_data >> x_scroll;
 			fore_mask_ptr[1] |= gfx_data << (7-x_scroll);
 			return;
 
 		case 7:		// Invalid multicolor bitmap
-			memset8(p, colors[0]);
+			memset8(p, 0);
 			fore_mask_ptr[0] |= ((gfx_data & 0xaa) | (gfx_data & 0xaa) >> 1) >> x_scroll;
 			fore_mask_ptr[1] |= ((gfx_data & 0xaa) | (gfx_data & 0xaa) >> 1) << (8-x_scroll);
 			return;
@@ -939,7 +882,7 @@ inline void MOS6569::draw_sprites(void)
 		if ((spr_draw & sbit) && mx[snum] <= DISPLAY_X-32) {
 			uint8 *p = chunky_line_start + mx[snum] + 8;
 			uint8 *q = spr_coll_buf + mx[snum] + 8;
-			uint8 color = spr_color[snum];
+			uint8 color = sc[snum];
 
 			// Fetch sprite data and mask
 			uint32 sdata = (spr_draw_data[snum][0] << 24) | (spr_draw_data[snum][1] << 16) | (spr_draw_data[snum][2] << 8);
@@ -988,12 +931,12 @@ inline void MOS6569::draw_sprites(void)
 						uint8 col;
 						if (plane1_l & 0x80000000) {
 							if (plane0_l & 0x80000000)
-								col = mm1_color;
+								col = mm1;
 							else
 								col = color;
 						} else {
 							if (plane0_l & 0x80000000)
-								col = mm0_color;
+								col = mm0;
 							else
 								continue;
 						}
@@ -1008,12 +951,12 @@ inline void MOS6569::draw_sprites(void)
 						uint8 col;
 						if (plane1_r & 0x80000000) {
 							if (plane0_r & 0x80000000)
-								col = mm1_color;
+								col = mm1;
 							else
 								col = color;
 						} else {
 							if (plane0_r & 0x80000000)
-								col = mm0_color;
+								col = mm0;
 							else
 								continue;
 						}
@@ -1084,12 +1027,12 @@ inline void MOS6569::draw_sprites(void)
 						uint8 col;
 						if (plane1 & 0x80000000) {
 							if (plane0 & 0x80000000)
-								col = mm1_color;
+								col = mm1;
 							else
 								col = color;
 						} else {
 							if (plane0 & 0x80000000)
-								col = mm0_color;
+								col = mm0;
 							else
 								continue;
 						}
@@ -1222,7 +1165,7 @@ inline void MOS6569::draw_sprites(void)
 #define SampleBorder \
 	if (draw_this_line) { \
 		if (border_on) \
-			border_color_sample[cycle-13] = ec_color; \
+			border_color_sample[cycle-13] = ec; \
 		chunky_ptr += 8; \
 		fore_mask_ptr++; \
 	}

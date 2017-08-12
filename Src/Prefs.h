@@ -49,13 +49,6 @@ enum {
 };
 
 
-// Display types
-enum {
-	DISPTYPE_WINDOW,	// Window
-	DISPTYPE_SCREEN		// Fullscreen
-};
-
-
 // Preferences data
 class Prefs {
 public:
@@ -72,11 +65,9 @@ public:
 	char DrivePath[4][256];	// Path for drive 8..11
 
 	char ViewPort[256];		// Size of the C64 screen to display (Win32)
-	char DisplayMode[256];	// Video mode to use for full screen (Win32)
 
 	int SIDType;			// SID emulation type
 	int REUSize;			// Size of REU
-	int DisplayType;		// Display type (BeOS)
 	int Joystick1Port;		// Port that joystick 1 is connected to (0 = no joystick, all other values are system dependant)
 	int Joystick2Port;		// Port that joystick 2 is connected to
 	int LatencyMin;			// Min msecs ahead of sound buffer (Win32)
@@ -93,12 +84,10 @@ public:
 	bool MapSlash;			// Map '/' in C64 filenames
 	bool Emul1541Proc;		// Enable processor-level 1541 emulation
 	bool SIDFilters;		// Emulate SID filters
-	bool DoubleScan;		// Double scan lines (BeOS, if DisplayType == DISPTYPE_SCREEN)
 	bool JoystickGeekPort;	// Enable GeekPort joystick adapter
 	bool HideCursor;		// Hide mouse cursor when visible (Win32)
 	bool DirectSound;		// Use direct sound (instead of wav) (Win32)
 	bool ExclusiveSound;	// Use exclusive mode with direct sound (Win32)
-	bool AutoPause;			// Auto pause when not foreground app (Win32)
 	bool PrefsAtStartup;	// Show prefs dialog at startup (Win32)
 	bool SystemMemory;		// Put view work surface in system mem (Win32)
 	bool AlwaysCopy;		// Always use a work surface (Win32)

@@ -140,7 +140,6 @@ static RECT rcScreen;
 static RECT rcLast;
 static RECT rcWindow;
 static RECT rcWork;
-static BOOL need_new_color_table = FALSE;
 static int view_x, view_y;
 
 static int led_rows = 16;
@@ -158,46 +157,6 @@ static HBRUSH off_brush;
 static HBRUSH error_off_brush;
 static HBRUSH on_brush;
 static HBRUSH error_on_brush;
-
-// Not fully working yet.
-#ifdef WORKBUFFER_BITMAP
-static BOOL workbuffer_bitmap = FALSE;
-static BOOL workbuffer_locked = FALSE;
-static DDSURFACEDESC bitmap_ddsd;
-#endif
-
-C64Display::DisplayMode default_modes[] = {
-	{ 320, 200, 8 },
-	{ 320, 240, 8 },
-	{ 512, 384, 8 },
-	{ 640, 400, 8 },
-	{ 640, 480, 8 },
-	{ 320, 200, 16 },
-	{ 320, 240, 16 },
-	{ 512, 384, 16 },
-	{ 640, 400, 16 },
-	{ 640, 480, 16 },
-};
-static int num_default_modes =
-	sizeof(default_modes)/sizeof(C64Display::DisplayMode);
-
-static C64Display::DisplayMode *display_modes = NULL;
-static int num_display_modes = 0;
-static int max_display_modes = 16;
-
-int C64Display::GetNumDisplayModes() const
-{
-	if (num_display_modes == 0)
-		return num_default_modes;
-	return num_display_modes;
-}
-
-const C64Display::DisplayMode *C64Display::GetDisplayModes() const
-{
-	if (num_display_modes == 0)
-		return default_modes;
-	return display_modes;
-}
 
 long ShowRequester(const char *str, const char *button1, const char *button2)
 {
@@ -230,7 +189,6 @@ C64Display::C64Display(C64 *the_c64) : TheC64(the_c64)
 	paused = FALSE;
 	waiting = FALSE;
 	show_leds = ThePrefs.ShowLEDs;
-	full_screen = ThePrefs.DisplayType == DISPTYPE_SCREEN;
 
 	// Turn LEDs off.
 	for (int i = 0; i < 4; i++)
@@ -275,9 +233,6 @@ C64Display::~C64Display()
 
 	// Offer to save now that we are not in full screen mode.
 	OfferSave();
-
-	// Free the display modes table.
-	delete[] display_modes;
 
 	// Free chunky buffer
 	delete chunky_buf;
@@ -424,9 +379,6 @@ void C64Display::Speedometer(int speed)
 	Debug("speed = %d %%\n", speed);
 	speed_index = speed;
 
-	if (full_screen)
-		return;
-
 	if (!ThePrefs.ShowLEDs) {
 		WindowTitle();
 		return;
@@ -460,27 +412,6 @@ void C64Display::Speedometer(int speed)
 
 UBYTE *C64Display::BitmapBase()
 {
-#ifdef WORKBUFFER_BITMAP
-	if (colors_depth == 8 && pWork) {
-		if (workbuffer_locked) {
-			pWork->Unlock(NULL);
-			workbuffer_locked = FALSE;
-		}
-		HRESULT ddrval;
-		for (;;) {
-			bitmap_ddsd.dwSize = sizeof(bitmap_ddsd);
-			ddrval = pWork->Lock(NULL, &bitmap_ddsd, 0, NULL);
-			if (ddrval != DDERR_WASSTILLDRAWING)
-				break;
-		}
-		if (ddrval == DD_OK) {
-			workbuffer_locked = TRUE;
-			workbuffer_bitmap = TRUE;
-			return (UBYTE *) bitmap_ddsd.lpSurface;
-		}
-	}
-	workbuffer_bitmap = FALSE;
-#endif
 	return chunky_buf;
 }
 
@@ -491,10 +422,6 @@ UBYTE *C64Display::BitmapBase()
 
 int C64Display::BitmapXMod()
 {
-#ifdef WORKBUFFER_BITMAP
-	if (workbuffer_locked)
-		return bitmap_ddsd.lPitch;
-#endif
 	return DISPLAY_X;
 }
 
@@ -506,13 +433,6 @@ int C64Display::BitmapXMod()
 void C64Display::PollKeyboard(UBYTE *CIA_key_matrix, UBYTE *CIA_rev_matrix, UBYTE *joystick)
 {
 	//Debug("Display::PollKeyboard\n");
-
-#ifdef WORKBUFFER_BITMAP
-	if (workbuffer_locked) {
-		pWork->Unlock(NULL);
-		workbuffer_locked = FALSE;
-	}
-#endif
 
 	for (;;)
 	{
@@ -543,15 +463,13 @@ bool C64Display::NumLock()
  *  Allocate C64 colors
  */
 
-void C64Display::InitColors(UBYTE *array)
+void C64Display::InitColors(void)
 {
-	if (colors_depth == 8) {
-		for (int i = 0; i < 256; i++)
-			array[i] = colors[i & 0x0f];
-	}
-	else {
-		for (int i = 0; i < 256; i++)
-			array[i] = i & 0x0f;
+	for (int i = 0; i < 16; i++) {
+		int r = palette_red[i];
+		int g = palette_green[i];
+		int b = palette_blue[i];
+		palette[i] = r << 16 | g << 8 | b;	// blue LSB
 	}
 }
 
@@ -574,11 +492,7 @@ long C64Display::ShowRequester(const char *str, const char *button1, const char 
 	else
 		type = MB_OK | MB_ICONSTOP;
 	Pause();
-	if (full_screen)
-		StopDirectDraw();
 	int result = MessageBox(hwnd, message, NAME " Error", type);
-	if (full_screen)
-		StartDirectDraw();
 	Resume();
 	if (result == IDCANCEL)
 		return TRUE;
@@ -637,7 +551,6 @@ BOOL C64Display::MakeWindow()
 
 	// Set up our preferred styles for our window depending on the mode.
 	windowed_style = WS_VISIBLE | WS_SYSMENU | WS_OVERLAPPED | WS_CAPTION | WS_MINIMIZEBOX | WS_THICKFRAME;
-	fullscreen_style = WS_POPUP | WS_VISIBLE;
 
 	// Compute the initial window size.
 	DWORD style = windowed_style;
@@ -743,9 +656,7 @@ long C64Display::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 
 	case WM_SIZE:
 	case WM_MOVE:
-		if (full_screen)
-			SetRect(&rcWindow, 0, 0, GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN));
-		else {
+		{
 			GetClientRect(hWnd, &rcWindow);
 			if (ThePrefs.ShowLEDs)
 				rcWindow.bottom -= led_rows;
@@ -794,8 +705,10 @@ long C64Display::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 				// Set new prefs
 				Prefs *prefs = new Prefs(ThePrefs);
 				prefs->DriveType[0] = drv_type;
-				Pause();
 				strcpy(prefs->DrivePath[0], sFilename);
+				if(drv_type == DRVTYPE_DIR)
+					prefs->Emul1541Proc = false;
+				Pause();
 				TheC64->NewPrefs(prefs);
 				ThePrefs = *prefs;
 				Resume();
@@ -811,8 +724,7 @@ long C64Display::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		break;
 
 	case WM_DISPLAYCHANGE:
-		if (!full_screen)
-			ResumeDirectDraw();
+		ResumeDirectDraw();
 		SetRect(&rcScreen, 0, 0, GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN));
 		break;
 
@@ -821,12 +733,6 @@ long C64Display::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		{
 			int old_active = active;
 			active = LOWORD(wParam) != WA_INACTIVE;
-			if (ThePrefs.AutoPause && active != old_active) {
-				if (!active)
-					Pause();
-				else
-					Resume();
-			}
 		}
 		if (active) {
 			ResumeDirectDraw();
@@ -893,23 +799,6 @@ long C64Display::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 				Resume();
 				break;
 
-			case ID_TOOLS_FULLSCREEN:
-				Pause();
-				StopDirectDraw();
-				full_screen = !full_screen;
-				if (!StartDirectDraw()) {
-					StopDirectDraw();
-					full_screen = !full_screen;
-					StartDirectDraw();
-					if (!full_screen)
-						ShowRequester(failure_message, "Continue");
-				}
-				Resume();
-				CheckMenuItem(GetMenu(hWnd), ID_TOOLS_FULLSCREEN, full_screen ? MF_CHECKED : MF_UNCHECKED);
-				if (paused)
-					Update();
-				break;
-
 			case ID_TOOLS_RESETDIRECTDRAW:
 				ResetDirectDraw();
 				break;
@@ -935,11 +824,9 @@ long C64Display::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 				break;
 
 			case ID_TOOLS_SAM:
-				if(!full_screen) {
-					Pause();
-					SAM(TheC64);
-					Resume();
-				}
+				Pause();
+				SAM(TheC64);
+				Resume();
 				break;
 
 			case ID_HELP_CONTENTS:
@@ -984,34 +871,11 @@ long C64Display::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		PostQuitMessage(0);
 		break;
 
-	case WM_QUERYNEWPALETTE:
-		if (!full_screen && pPalette && pPrimary) {
-			SetPalettes();
-			BuildColorTable();
-			if (!active)
-				Update();
-		}
-		break;
-
-	case WM_PALETTECHANGED:
-		if (!full_screen) {
-			if ((HWND) wParam != hWnd) {
-				need_new_color_table = TRUE;
-				InvalidateRect(hwnd, NULL, FALSE);
-			}
-		}
-		break;
-
 	case WM_PAINT:
-		if (!full_screen)
 		{
 			PAINTSTRUCT ps;
 			HDC hdc = BeginPaint(hWnd, &ps);
 			EndPaint(hWnd, &ps);
-			if (need_new_color_table) {
-				BuildColorTable();
-				need_new_color_table = FALSE;
-			}
 			if (paused)
 				Update();
 			draw_led_bar();
@@ -1060,10 +924,6 @@ long C64Display::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 
 			case KEY_F9:
 				PostMessage(hWnd, WM_COMMAND, ID_TOOLS_SAM, 0);
-				break;
-
-			case KEY_ALTENTER:
-				PostMessage(hWnd, WM_COMMAND, ID_TOOLS_FULLSCREEN, 0);
 				break;
 
 			case KEY_CTRLENTER:
@@ -1352,39 +1212,29 @@ int C64Display::VirtKey2C64(int virtkey, DWORD keydata)
 BOOL C64Display::SetupWindow()
 {
 	// Setup the window.
-	SetupWindowMode(full_screen);
+	SetupWindowMode();
 
 	UpdateWindow(hwnd);
-
-	if (full_screen)
-		ShowCursor(FALSE);
 
 	return TRUE;
 }
 
-BOOL C64Display::SetupWindowMode(BOOL full_screen_mode)
+BOOL C64Display::SetupWindowMode()
 {
 	DWORD style;
 	int x0, y0, x, y;
-	if (full_screen_mode) {
-		style = fullscreen_style;
-		x0 = 0;
-		y0 = 0;
-		x = GetSystemMetrics(SM_CXSCREEN);
-		y = GetSystemMetrics(SM_CYSCREEN);
-	}
-	else {
-		style = windowed_style;
-		x0 = rcLast.left;
-		y0 = rcLast.top;
-		x = rcLast.right - rcLast.left;
-		y = rcLast.bottom - rcLast.top;
-	}
+
+	style = windowed_style;
+	x0 = rcLast.left;
+	y0 = rcLast.top;
+	x = rcLast.right - rcLast.left;
+	y = rcLast.bottom - rcLast.top;
+
 	SetWindowLong(hwnd, GWL_STYLE, style);
 	SetWindowPos(hwnd, NULL, x0, y0, x, y, SWP_NOZORDER | SWP_NOACTIVATE);
 	SetWindowPos(hwnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
 	GetClientRect(hwnd, &rcWindow);
-	if (!full_screen_mode && ThePrefs.ShowLEDs)
+	if (ThePrefs.ShowLEDs)
 		rcWindow.bottom -= led_rows;
 	ClientToScreen(hwnd, (LPPOINT) &rcWindow);
 	ClientToScreen(hwnd, (LPPOINT) &rcWindow + 1);
@@ -1395,69 +1245,19 @@ BOOL C64Display::SetupWindowMode(BOOL full_screen_mode)
 		SetMenu(hwnd, NULL);
 		DestroyMenu(old_menu);
 	}
-	if (!full_screen_mode) {
-		HMENU new_menu = LoadMenu(hInstance, MAKEINTRESOURCE(IDR_MAIN_MENU));
-		SetMenu(hwnd, new_menu);
-	}
+	HMENU new_menu = LoadMenu(hInstance, MAKEINTRESOURCE(IDR_MAIN_MENU));
+	SetMenu(hwnd, new_menu);
 
 	return TRUE;
 }
 
 BOOL C64Display::RestoreWindow()
 {
-	if (full_screen)
-		ShowCursor(TRUE);
+	GetWindowRect(hwnd, &rcLast);
 
-	if (!full_screen)
-		GetWindowRect(hwnd, &rcLast);
-
-	SetupWindowMode(FALSE);
+	SetupWindowMode();
 
 	return TRUE;
-}
-
-HRESULT CALLBACK C64Display::EnumModesCallback(LPDDSURFACEDESC pDDSD, LPVOID lpContext)
-{
-	C64Display *pDisplay = (C64Display *) lpContext;
-	return pDisplay->EnumModesCallback(pDDSD);
-}
-
-HRESULT C64Display::EnumModesCallback(LPDDSURFACEDESC pDDSD)
-{
-	DisplayMode mode;
-	mode.x = pDDSD->dwWidth;
-	mode.y = pDDSD->dwHeight;
-	mode.depth = pDDSD->ddpfPixelFormat.dwRGBBitCount;
-	mode.modex = (pDDSD->ddsCaps.dwCaps & DDSCAPS_MODEX) != 0;
-	Debug("EnumModesCallback: %dx%dx%d (modex: %d)\n",
-		mode.x, mode.y, mode.depth, mode.modex);
-	if (display_modes == NULL)
-		display_modes = new DisplayMode[max_display_modes];
-	if (num_display_modes == max_display_modes) {
-		int old_max = max_display_modes;
-		max_display_modes *= 2;
-		DisplayMode *new_modes = new DisplayMode[max_display_modes];
-		memcpy(new_modes, display_modes, sizeof(DisplayMode)*old_max);
-		delete[] display_modes;
-		display_modes = new_modes;
-	}
-	display_modes[num_display_modes++] = mode;
-	return DDENUMRET_OK;
-}
-
-int C64Display::CompareModes(const void *e1, const void *e2)
-{
-	DisplayMode *m1 = (DisplayMode *) e1;
-	DisplayMode *m2 = (DisplayMode *) e2;
-	if (m1->depth != m2->depth)
-		return m1->depth - m2->depth;
-	if (m1->x != m2->x)
-		return m1->x - m2->x;
-	if (m1->y != m2->y)
-		return m1->y - m2->y;
-	if (m1->modex != m2->modex)
-		return int(m1->modex) - int(m2->modex);
-	return 0;
 }
 
 typedef HRESULT ( WINAPI* LPDIRECTDRAWCREATE )( GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnknown FAR *pUnkOuter );
@@ -1482,58 +1282,10 @@ BOOL C64Display::StartDirectDraw()
 			return Fail("Failed to initialize direct draw.");
 	}
 
-	if (full_screen) {
-
-		// Set exclusive mode.
-		ddrval = pDD->SetCooperativeLevel(hwnd, DDSCL_EXCLUSIVE | DDSCL_FULLSCREEN | DDSCL_ALLOWMODEX);
-		if (ddrval != DD_OK) {
-			DebugResult("SetCooperativeLevel failed", ddrval);
-			return Fail("Failed to set exclusive cooperative level.");
-		}
-
-		if (!display_modes) {
-
-			// Get all available video modes and sort them.
-			num_display_modes = 0;
-			pDD->EnumDisplayModes(0, NULL, this, EnumModesCallback);
-			qsort(display_modes, num_display_modes, sizeof(DisplayMode), CompareModes);
-		}
-
-		// Set the video mode.
-		const char *display_mode = ThePrefs.DisplayMode;
-		if (display_mode[0] == '\0' ||
-		    stricmp(display_mode, "Default") == 0)
-			display_mode = NULL;
-		if (display_mode) {
-			int x, y, depth = 8;
-			if (sscanf(display_mode, "%dx%dx%d", &x, &y, &depth) < 2)
-				return Fail("Invalid command line mode format.");
-			ddrval = pDD->SetDisplayMode(x, y, depth);
-			if (ddrval != DD_OK) {
-				DebugResult("SetDisplayMode failed", ddrval);
-				return Fail("Failed to set the video mode.");
-			}
-		}
-		else {
-			int i = 0; for (i = 0; i < num_display_modes; i++) {
-				DisplayMode *mode = &display_modes[i];
-				if (mode->x < view_x || mode->y < view_y)
-					continue;
-				ddrval = pDD->SetDisplayMode(mode->x, mode->y, mode->depth);
-				if (ddrval == DD_OK)
-					break;
-			}
-			if (i == num_display_modes)
-				return Fail("Failed to find a suitable video mode.");
-		}
-	}
-	else {
-
-		// Set normal mode.
-		ddrval = pDD->SetCooperativeLevel(hwnd, DDSCL_NORMAL);
-		if (ddrval != DD_OK)
-			return Fail("Failed to set normal cooperative level.");
-	}
+	// Set normal mode.
+	ddrval = pDD->SetCooperativeLevel(hwnd, DDSCL_NORMAL);
+	if (ddrval != DD_OK)
+		return Fail("Failed to set normal cooperative level.");
 
 	// Create the primary surface with one back buffer.
 	DDSURFACEDESC ddsd;
@@ -1587,59 +1339,16 @@ BOOL C64Display::StartDirectDraw()
 			Debug("Work surface is in unknown memory.\n");
 	}
 
-	if (!full_screen) {
-
-		// Create clipper object.
-		ddrval = pDD->CreateClipper(0, &pClipper, NULL);
-		if (ddrval != DD_OK)
-			return Fail("Failed to create direct draw clipper.");
-		ddrval = pClipper->SetHWnd(0, hwnd);
-		if (ddrval != DD_OK)
-			return Fail("Failed setting clipper window handle.");
-		ddrval = pPrimary->SetClipper(pClipper);
-		if (ddrval != DD_OK)
-			return Fail("Failed setting primary surface clipper.");
-	}
-
-	// We need to use a 256 color palette otherwise we get an
-	// invalid pixel format error when trying to set the palette
-	// on a windowed surface.
-	PALETTEENTRY ape[256];
-	HDC hdc = GetDC(NULL);
-	int entries = GetSystemPaletteEntries(hdc, 0, 256, ape);
-	ReleaseDC(NULL, hdc);
-	if (entries != 256) {
-		Debug("failed to get 256 system palette entries: %d (%d)\n",
-			entries, GetLastError());
-
-		// Build a 332 palette as the default.  This makes it easy for
-		// other apps to find colors when they aren't the foreground.
-		for (int i = 0; i < 256; i++) {
-			ape[i].peRed   = (BYTE)(((i >> 5) & 0x07) * 255 / 7);
-			ape[i].peGreen = (BYTE)(((i >> 2) & 0x07) * 255 / 7);
-			ape[i].peBlue  = (BYTE)(((i >> 0) & 0x03) * 255 / 3);
-			ape[i].peFlags = 0;
-		}
-	}
-
-	// Now override the first 16 entries with the C64 colors.
-	// If we were really obsessive we could try to find the
-	// nearest matches and replace them instead.
-	for (int i = 0; i < 16; i++) {
-		ape[i].peRed = palette_red[i];
-		ape[i].peGreen = palette_green[i];
-		ape[i].peBlue = palette_blue[i];
-		ape[i].peFlags = 0;
-	}
-
-	// Create the palette and set it on all surfaces.
-	ddrval = pDD->CreatePalette(DDPCAPS_8BIT, ape, &pPalette, NULL);
+	// Create clipper object.
+	ddrval = pDD->CreateClipper(0, &pClipper, NULL);
 	if (ddrval != DD_OK)
-		return Fail("Failed to create palette.");
-	if (!SetPalettes())
-		return Fail("Failed to set palettes.");
-	if (!BuildColorTable())
-		return Fail("Failed to build color table.");
+		return Fail("Failed to create direct draw clipper.");
+	ddrval = pClipper->SetHWnd(0, hwnd);
+	if (ddrval != DD_OK)
+		return Fail("Failed setting clipper window handle.");
+	ddrval = pPrimary->SetClipper(pClipper);
+	if (ddrval != DD_OK)
+		return Fail("Failed setting primary surface clipper.");
 
 	// Start with a clean slate.
 	if (!EraseSurfaces()) {
@@ -1721,115 +1430,6 @@ BOOL C64Display::Fail(const char *error)
 }
 
 
-BOOL C64Display::SetPalettes()
-{
-	// Only try to set palettes when in 256 color mode.
-	HDC hdc = GetDC(NULL);
-	int depth = GetDeviceCaps(hdc, PLANES) * GetDeviceCaps(hdc, BITSPIXEL);
-	ReleaseDC(NULL, hdc);
-	if (depth != 8)
-		return TRUE;
-
-	// Set palette on primary surface.
-	HRESULT ddrval = pPrimary->SetPalette(pPalette);
-	if (ddrval == DDERR_SURFACELOST) {
-		pPrimary->Restore();
-		ddrval = pPrimary->SetPalette(pPalette);
-	}
-	if (ddrval == DDERR_NOT8BITCOLOR)
-		return TRUE;
-	if (ddrval != DD_OK) {
-		DebugResult("failed to set palette on primary", ddrval);
-		return FALSE;
-	}
-
-	// Set palette on back surface.
-	if (pBack) {
-		FlipSurfaces();
-		pPrimary->SetPalette(pPalette);
-		if (ddrval == DDERR_SURFACELOST) {
-			pPrimary->Restore();
-			ddrval = pPrimary->SetPalette(pPalette);
-		}
-		if (ddrval != DD_OK) {
-			DebugResult("failed to set palette on back", ddrval);
-			return FALSE;
-		}
-	}
-
-	// Set palette on work surface.
-	if (pWork) {
-		ddrval = pWork->SetPalette(pPalette);
-		if (ddrval == DDERR_SURFACELOST) {
-			pWork->Restore();
-			ddrval = pWork->SetPalette(pPalette);
-		}
-		if (ddrval != DD_OK) {
-			DebugResult("failed to set palette on work", ddrval);
-			return FALSE;
-		}
-	}
-
-	return TRUE;
-}
-
-BOOL C64Display::BuildColorTable()
-{
-	if (!pPrimary)
-		return FALSE;
-
-	// Determine the physical colors corresponding to the 16 C64 colors.
-	for (int j = 0; j < 16; j++) {
-
-		// Compute the true color in RGB format.
-		int red = palette_red[j];
-		int green = palette_green[j];
-		int blue = palette_blue[j];
-		COLORREF rgb = RGB(red, green, blue);
-
-		// Set pixel(0, 0) to that value.
-		LPDIRECTDRAWSURFACE pSurface = pWork; /* AERO fix */ //pBack ? pBack : pPrimary;
-		HDC hdc;
-		if (pSurface->GetDC(&hdc) != DD_OK)
-			return Fail("Failed getting direct draw device context.");
-		COLORREF new_rgb = SetPixel(hdc, 0, 0, PALETTERGB(red, green, blue));
-		Debug("new: %.8x, old %.8x\n", new_rgb, rgb);
-		pSurface->ReleaseDC(hdc);
-
-		// Read the physical color from linear memory.
-		DDSURFACEDESC ddsd;
-		ddsd.dwSize = sizeof(ddsd);
-		HRESULT ddrval;
-		for (;;) {
-			ddrval = pSurface->Lock(NULL, &ddsd, 0, NULL);
-			if (ddrval != DDERR_WASSTILLDRAWING)
-				break;
-		}
-		if (ddrval != DD_OK)
-			return Fail("Failed to lock surface.");
-		colors_depth = ddsd.ddpfPixelFormat.dwRGBBitCount;
-		DWORD dw = *(DWORD *) ddsd.lpSurface;
-		Debug("DWORD = %.8x, depth = %d\n", dw, colors_depth);
-		if (colors_depth != 32)
-			dw &= (1 << colors_depth) - 1;
-		pSurface->Unlock(NULL);
-
-		// Store the physical color in the colors array.
-		colors[j] = dw;
-		Debug("colors[%d] = %d\n", j, dw);
-	}
-
-	// Replicate the physical colors into the rest of the color array.
-	for (int k = 16; k < 256; k++)
-		colors[k] = colors[k & 0x0f];
-
-	// Tell the VIC all about it;
-	if (!in_constructor)
-		TheC64->TheVIC->ReInitColors();
-
-	return TRUE;
-}
-
 /*
  *  Redraw bitmap using double buffering when possible.
  */
@@ -1840,32 +1440,8 @@ void C64Display::Update()
 
 	//Debug("Display::Update\n");
 
-	if (full_screen && !active)
-		return;
-
 	if (!pPrimary)
 		return;
-
-#ifdef WORKBUFFER_BITMAP
-	// Special case for using the workbuffer as a bitmap.
-	if (workbuffer_bitmap) {
-		if (workbuffer_locked) {
-			pWork->Unlock(NULL);
-			workbuffer_locked = FALSE;
-		}
-		RECT rc;
-		rc.left = (DISPLAY_X - view_x)/2;
-		rc.top = (DISPLAY_Y - view_y)/2 - 1;
-		if (rc.top < 0)
-			rc.top = 0;
-		rc.right = rc.left + view_x;
-		rc.bottom = rc.top + view_y;
-		CopySurface(rc);
-		draw_leds();
-		return;
-
-	}
-#endif
 
 	// Work on the backing surface unless there isn't one.
 	// We'll flip to it when we're done.
@@ -1877,7 +1453,7 @@ void C64Display::Update()
 	// * when streching
 	// * when partially offscreen
 
-	if (!full_screen && pWork) {
+	if (pWork) {
 		if (ThePrefs.AlwaysCopy || !active || paused ||
 #if 0
 		    GetForegroundWindow() != hwnd ||
@@ -1912,7 +1488,6 @@ void C64Display::Update()
 				return;
 			}
 			EraseSurfaces();
-			BuildColorTable();
 		}
 		else if (ddrval != DDERR_WASSTILLDRAWING) {
 			if (pWork && pSurface != pWork)
@@ -1932,42 +1507,18 @@ void C64Display::Update()
 	int x_siz, y_siz;
 
 	// XXX: Do these calculations only when the parameters change.
-	if (full_screen) {
-		if (rcWindow.right >= view_x) {
-			x_off = (rcWindow.right - view_x)/2;
-			x_beg = (DISPLAY_X - view_x)/2;
-			x_siz = view_x;
-		}
-		else {
-			x_off = 0;
-			x_beg = (DISPLAY_X - rcWindow.right)/2;
-			x_siz = rcWindow.right;
-		}
-		if (rcWindow.bottom >= view_y) {
-			y_off = (rcWindow.bottom - view_y)/2;
-			y_beg = (DISPLAY_Y - view_y)/2 - 1;
-			y_siz = view_y;
-		}
-		else {
-			y_off = 0;
-			y_beg = (DISPLAY_Y - rcWindow.bottom)/2 - 1;
-			y_siz = rcWindow.bottom;
-		}
+	if (pSurface == pWork) {
+		x_off = 0;
+		y_off = 0;
 	}
 	else {
-		if (pSurface == pWork) {
-			x_off = 0;
-			y_off = 0;
-		}
-		else {
-			x_off = rcWindow.left;
-			y_off = rcWindow.top;
-		}
-		x_beg = (DISPLAY_X - view_x)/2;
-		y_beg = (DISPLAY_Y - view_y)/2 - 1;
-		x_siz = view_x;
-		y_siz = view_y;
+		x_off = rcWindow.left;
+		y_off = rcWindow.top;
 	}
+	x_beg = (DISPLAY_X - view_x)/2;
+	y_beg = (DISPLAY_Y - view_y)/2 - 1;
+	x_siz = view_x;
+	y_siz = view_y;
 	if (y_beg < 0)
 		y_beg = 0;
 
@@ -1980,29 +1531,7 @@ void C64Display::Update()
 	// These tight loops are where the display speed action is at.
 	// Note that MSVC optimizes out the mulitiplications and
 	// reverses the direction of the loop counters automatically.
-	if (depth == 8) {
-
-		// Since the VIC is using our palette entries we just copy.
-		//TIMESCOPE(ts1, "hand blt 8");
-		BYTE *scanline = surface;
-		BYTE *scanbuf = chunky;
-		//Debug("scanline = %8p, scanbuf = %8p\n", scanline, scanbuf);
-		for (int j = 0; j < y_siz; j++) {
-			memcpy(scanline, scanbuf, x_siz);
-			scanline += pitch;
-			scanbuf += DISPLAY_X;
-		}
-	}
-	else if (depth == 16) {
-		//TIMESCOPE(ts1, "hand blt 16");
-		for (int j = 0; j < y_siz; j++) {
-			WORD *scanline = (WORD *) (surface + pitch*j);
-			BYTE *scanbuf = chunky + +DISPLAY_X*j;
-			for (int i = 0; i < x_siz; i++)
-				*scanline++ = (WORD) colors[*scanbuf++];
-		}
-	}
-	else if (depth == 24) {
+	if (depth == 24) {
 
 		// XXX: Works for little-endian only.
 		//TIMESCOPE(ts1, "hand blt 24");
@@ -2010,7 +1539,7 @@ void C64Display::Update()
 			BYTE *scanline = surface + pitch*j;
 			BYTE *scanbuf = chunky + +DISPLAY_X*j;
 			for (int i = 0; i < x_siz; i++) {
-				*((DWORD *) scanline) = colors[*scanbuf++];
+				*((DWORD *) scanline) = palette[*scanbuf++];
 				scanline += 3;
 			}
 		}
@@ -2021,11 +1550,11 @@ void C64Display::Update()
 			DWORD *scanline = (DWORD *) (surface + pitch*j);
 			BYTE *scanbuf = chunky + +DISPLAY_X*j;
 			for (int i = 0; i < x_siz; i++)
-				*scanline++ = colors[*scanbuf++];
+				*scanline++ = palette[*scanbuf++];
 		}
 	}
 	else
-		Debug("PixelCount not 8, 16, 24, or 32\n");
+		Debug("PixelCount not 24, or 32\n");
 
 	// Unlock the surface.
 	HRESULT ddrval = pSurface->Unlock(NULL);
@@ -2035,8 +1564,6 @@ void C64Display::Update()
 	// Now flip from the primary surface to the backing surface.
 	if (pSurface == pWork)
 		CopySurface(rcWork);
-	else if (full_screen && pBack)
-		FlipSurfaces();
 
 	// Update drive LEDs
 	draw_leds();
@@ -2161,7 +1688,7 @@ BOOL C64Display::RestoreSurfaces()
 
 void C64Display::draw_led_bar()
 {
-	if (full_screen || !ThePrefs.ShowLEDs)
+	if (!ThePrefs.ShowLEDs)
 		return;
 
 	HDC hdc = GetDC(hwnd);
@@ -2202,7 +1729,7 @@ void C64Display::draw_led_bar()
 
 void C64Display::draw_leds(BOOL force)
 {
-	if (full_screen || !ThePrefs.ShowLEDs)
+	if (!ThePrefs.ShowLEDs)
 		return;
 
 	if (!force) {

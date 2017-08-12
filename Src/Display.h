@@ -56,7 +56,7 @@ public:
 	int BitmapXMod(void);
 	void PollKeyboard(uint8 *key_matrix, uint8 *rev_matrix, uint8 *joystick);
 	bool NumLock(void);
-	void InitColors(uint8 *colors);
+	void InitColors(void);
 	void NewPrefs(Prefs *prefs);
 
 	C64 *TheC64;
@@ -90,15 +90,6 @@ public:
 	void Resume();
 	void Quit();
 
-	struct DisplayMode {
-		int x;
-		int y;
-		int depth;
-		BOOL modex;
-	};
-	int GetNumDisplayModes() const;
-	const DisplayMode *GetDisplayModes() const;
-
 private:
 	// Window members.
 	void ResetKeyboardState();
@@ -108,7 +99,7 @@ private:
 	static int VirtKey2C64(int virtkey, DWORD keydata);
 	BOOL CalcViewPort();
 	BOOL SetupWindow();
-	BOOL SetupWindowMode(BOOL full_screen);
+	BOOL SetupWindowMode();
 	BOOL RestoreWindow();
 	BOOL ResizeWindow(int side, RECT *pRect);
 	void WindowTitle();
@@ -126,8 +117,6 @@ private:
 	BOOL Fail(const char *message);
 
 	// DirectDraw worker members.
-	BOOL SetPalettes();
-	BOOL BuildColorTable();
 	BOOL CopySurface(RECT &rcWork);
 	BOOL FlipSurfaces();
 	BOOL EraseSurfaces();
@@ -145,11 +134,9 @@ private:
 	BOOL paused;				// is application paused?
 	BOOL waiting;				// is application waiting?
 	DWORD windowed_style;			// style of windowed window
-	DWORD fullscreen_style;			// style of fullscreen window
 	char failure_message[128];		// what when wrong
 	int speed_index;			// look ma, no hands
 	BOOL show_leds;				// cached prefs option
-	BOOL full_screen;			// cached prefs option
 	BOOL in_constructor;			// if we are being contructed 
 	BOOL in_destructor;			// if we are being destroyed
 
@@ -160,7 +147,7 @@ private:
 	LPDIRECTDRAWCLIPPER pClipper;		// DirectDraw clipper
 	LPDIRECTDRAWPALETTE pPalette;		// DirectDraw palette
 
-	DWORD colors[256];			// our palette colors
+	DWORD palette[16];			// our palette colors
 	int colors_depth;			// depth of the colors table
 #endif
 

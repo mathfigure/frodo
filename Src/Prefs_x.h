@@ -18,9 +18,12 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include "main.h"
 
 bool Prefs::ShowEditor(bool startup, char *prefs_name)
 {
-    // No prefs editor implemented
-	return startup;
+	// Reload the preferences file that may have edited externaly
+	Load(Frodo::get_prefs_path());
+	printf("Preferences reloaded from %s\n",Frodo::get_prefs_path());
+	return true;
 }

@@ -23,7 +23,9 @@
 #include <gnome.h>
 #include <glade/glade.h>
 
+#ifdef HAVE_SDL
 #include <SDL.h>
+#endif
 
 
 // Glade XML tree
@@ -54,13 +56,11 @@ bool Prefs::ShowEditor(bool startup, char *prefs_name)
 	prefs = this;
 	prefs_path = prefs_name;
 
-	// Load XML user interface file on startup
-	if (startup) {
-		xml = glade_xml_new(DATADIR "Frodo.glade", NULL, NULL);
-		if (xml) {
-			glade_xml_signal_autoconnect(xml);
-			set_values();
-		}
+	// Load XML user interface on first call
+	if (!xml) if(xml = glade_xml_new(DATADIR "Frodo.glade", NULL, NULL)) {
+		glade_xml_signal_autoconnect(xml);
+		if(startup)
+			return true;
 	}
 
 	// No XML means no prefs editor
@@ -70,6 +70,7 @@ bool Prefs::ShowEditor(bool startup, char *prefs_name)
 	// Run editor
 	result = false;
 
+	set_values();
 	gtk_widget_show(glade_xml_get_widget(xml, "prefs_win"));
 	gtk_main();
 
@@ -88,11 +89,15 @@ static void create_joystick_menu(const char *widget_name)
 
 	GtkWidget *menu = gtk_menu_new();
 
+#ifdef HAVE_SDL
 	for (int i = -1; i < SDL_NumJoysticks(); ++i) {
 		GtkWidget *item = gtk_menu_item_new_with_label(i < 0 ? "None" : SDL_JoystickName(i));
 		gtk_widget_show(item);
 		gtk_menu_append(GTK_MENU(menu), item);
 	}
+#else
+	//TODO (not really, just use the keyboard)
+#endif
 
 	gtk_option_menu_set_menu(GTK_OPTION_MENU(w), menu);
 }
@@ -108,7 +113,6 @@ static void set_values()
 	gtk_entry_set_text(GTK_ENTRY(gnome_file_entry_gtk_entry(GNOME_FILE_ENTRY(glade_xml_get_widget(xml, "drive11_path")))), prefs->DrivePath[3]);
 
 	// Video/Sound
-	gtk_option_menu_set_history(GTK_OPTION_MENU(glade_xml_get_widget(xml, "display_type")), prefs->DisplayType);
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(glade_xml_get_widget(xml, "sprites_on")), prefs->SpritesOn);
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(glade_xml_get_widget(xml, "sprite_collisions")), prefs->SpriteCollisions);
 	gtk_option_menu_set_history(GTK_OPTION_MENU(glade_xml_get_widget(xml, "sid_type")), prefs->SIDType);
@@ -154,7 +158,6 @@ static void get_values()
 	get_drive_path(3, "drive11_path");
 
 	// Video/Sound
-	prefs->DisplayType = gtk_option_menu_get_history(GTK_OPTION_MENU(glade_xml_get_widget(xml, "display_type")));
 	prefs->SpritesOn = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(glade_xml_get_widget(xml, "sprites_on")));
 	prefs->SpriteCollisions = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(glade_xml_get_widget(xml, "sprite_collisions")));
 	prefs->SIDType = gtk_option_menu_get_history(GTK_OPTION_MENU(glade_xml_get_widget(xml, "sid_type")));

@@ -22,6 +22,7 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <linux/soundcard.h>
+#include "VIC.h"
 
 
 /*

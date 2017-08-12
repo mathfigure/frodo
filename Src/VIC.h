@@ -44,7 +44,6 @@ public:
 	bool EmulateCycle(void);
 	void ChangedVA(uint16 new_va);	// CIA VA14/15 has changed
 	void TriggerLightpen(void);		// Trigger lightpen interrupt
-	void ReInitColors(void);
 	void GetState(MOS6569State *vd);
 	void SetState(MOS6569State *vd);
 
@@ -70,15 +69,6 @@ private:
 	C64 *the_c64;				// Pointer to C64
 	C64Display *the_display;	// Pointer to C64Display
 	MOS6510 *the_cpu;			// Pointer to 6510
-
-	uint8 colors[256];			// Indices of the 16 C64 colors (16 times mirrored to avoid "& 0x0f")
-
-	uint8 ec_color, b0c_color, b1c_color,
-	      b2c_color, b3c_color;	// Indices for exterior/background colors
-	uint8 mm0_color, mm1_color;	// Indices for MOB multicolors
-	uint8 spr_color[8];			// Indices for MOB colors
-
-	uint32 ec_color_long;		// ec_color expanded to 32 bits
 
 	uint8 matrix_line[40];		// Buffer for video line, read in Bad Lines
 	uint8 color_line[40];		// Buffer for color line, read in Bad Lines

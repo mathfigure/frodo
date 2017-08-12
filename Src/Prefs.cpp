@@ -51,11 +51,9 @@ Prefs::Prefs()
 	strcpy(DrivePath[3], "");
 
 	strcpy(ViewPort, "Default");
-	strcpy(DisplayMode, "Default");
 
 	SIDType = SIDTYPE_DIGITAL;
 	REUSize = REU_NONE;
-	DisplayType = DISPTYPE_WINDOW;
 	Joystick1Port = 0;
 	Joystick2Port = 0;
 
@@ -65,13 +63,11 @@ Prefs::Prefs()
 	LimitSpeed = true;
 	FastReset = false;
 	MapSlash = true;
-	Emul1541Proc = false;
+	Emul1541Proc = true;
 	SIDFilters = true;
-	DoubleScan = true;
 	HideCursor = false;
 	DirectSound = true;	
 	ExclusiveSound = false;
-	AutoPause = false;
 	PrefsAtStartup = false;
 	SystemMemory = false;
 	AlwaysCopy = true;
@@ -97,10 +93,8 @@ bool Prefs::operator==(const Prefs &rhs) const
 		&& strcmp(DrivePath[2], rhs.DrivePath[2]) == 0
 		&& strcmp(DrivePath[3], rhs.DrivePath[3]) == 0
 		&& strcmp(ViewPort, rhs.ViewPort) == 0
-		&& strcmp(DisplayMode, rhs.DisplayMode) == 0
 		&& SIDType == rhs.SIDType
 		&& REUSize == rhs.REUSize
-		&& DisplayType == rhs.DisplayType
 		&& SpritesOn == rhs.SpritesOn
 		&& SpriteCollisions == rhs.SpriteCollisions
 		&& Joystick1Port == rhs.Joystick1Port
@@ -111,11 +105,9 @@ bool Prefs::operator==(const Prefs &rhs) const
 		&& MapSlash == rhs.MapSlash
 		&& Emul1541Proc == rhs.Emul1541Proc
 		&& SIDFilters == rhs.SIDFilters
-		&& DoubleScan == rhs.DoubleScan
 		&& HideCursor == rhs.HideCursor
 		&& DirectSound == rhs.DirectSound
 		&& ExclusiveSound == rhs.ExclusiveSound
-		&& AutoPause == rhs.AutoPause
 		&& PrefsAtStartup == rhs.PrefsAtStartup
 		&& SystemMemory == rhs.SystemMemory
 		&& AlwaysCopy == rhs.AlwaysCopy
@@ -141,9 +133,6 @@ void Prefs::Check(void)
 
 	if (REUSize < REU_NONE || REUSize > REU_16M)
 		REUSize = REU_NONE;
-
-	if (DisplayType < DISPTYPE_WINDOW || DisplayType > DISPTYPE_SCREEN)
-		DisplayType = DISPTYPE_WINDOW;
 }
 
 
@@ -179,8 +168,6 @@ void Prefs::Load(const char *filename)
 					strcpy(DrivePath[3], value);
 				else if (!strcmp(keyword, "ViewPort"))
 					strcpy(ViewPort, value);
-				else if (!strcmp(keyword, "DisplayMode"))
-					strcpy(DisplayMode, value);
 				else if (!strcmp(keyword, "SIDType"))
 					if (!strcmp(value, "DIGITAL"))
 						SIDType = SIDTYPE_DIGITAL;
@@ -201,9 +188,7 @@ void Prefs::Load(const char *filename)
 						REUSize = REU_16M;
 					else
 						REUSize = REU_NONE;
-				} else if (!strcmp(keyword, "DisplayType"))
-					DisplayType = strcmp(value, "SCREEN") ? DISPTYPE_WINDOW : DISPTYPE_SCREEN;
-				else if (!strcmp(keyword, "Joystick1Port"))
+				} else if (!strcmp(keyword, "Joystick1Port"))
 					Joystick1Port = atoi(value);
 				else if (!strcmp(keyword, "Joystick2Port"))
 					Joystick2Port = atoi(value);
@@ -223,16 +208,12 @@ void Prefs::Load(const char *filename)
 					Emul1541Proc = !strcmp(value, "TRUE");
 				else if (!strcmp(keyword, "SIDFilters"))
 					SIDFilters = !strcmp(value, "TRUE");
-				else if (!strcmp(keyword, "DoubleScan"))
-					DoubleScan = !strcmp(value, "TRUE");
 				else if (!strcmp(keyword, "HideCursor"))
 					HideCursor = !strcmp(value, "TRUE");
 				else if (!strcmp(keyword, "DirectSound"))
 					DirectSound = !strcmp(value, "TRUE");
 				else if (!strcmp(keyword, "ExclusiveSound"))
 					ExclusiveSound = !strcmp(value, "TRUE");
-				else if (!strcmp(keyword, "AutoPause"))
-					AutoPause = !strcmp(value, "TRUE");
 				else if (!strcmp(keyword, "PrefsAtStartup"))
 					PrefsAtStartup = !strcmp(value, "TRUE");
 				else if (!strcmp(keyword, "SystemMemory"))
@@ -246,7 +227,7 @@ void Prefs::Load(const char *filename)
 			}
 		}
 		fclose(file);
-	}
+	} else	Save(filename);		// preferences file not exists, create it
 	Check();
 	ThePrefsOnDisk = *this;
 }
@@ -271,7 +252,6 @@ bool Prefs::Save(const char *filename)
 		for (int i=0; i<4; i++)
 			fprintf(file, "DrivePath%d = %s\n", i+8, DrivePath[i]);
 		fprintf(file, "ViewPort = %s\n", ViewPort);
-		fprintf(file, "DisplayMode = %s\n", DisplayMode);
 		fprintf(file, "SIDType = ");
 		switch (SIDType) {
 			case SIDTYPE_NONE:
@@ -305,7 +285,6 @@ bool Prefs::Save(const char *filename)
 				fprintf(file, "16M\n");
 				break;
 		};
-		fprintf(file, "DisplayType = %s\n", DisplayType == DISPTYPE_WINDOW ? "WINDOW" : "SCREEN");
 		fprintf(file, "Joystick1Port = %d\n", Joystick1Port);
 		fprintf(file, "Joystick2Port = %d\n", Joystick2Port);
 		fprintf(file, "SpritesOn = %s\n", SpritesOn ? "TRUE" : "FALSE");
@@ -316,11 +295,9 @@ bool Prefs::Save(const char *filename)
 		fprintf(file, "MapSlash = %s\n", MapSlash ? "TRUE" : "FALSE");
 		fprintf(file, "Emul1541Proc = %s\n", Emul1541Proc ? "TRUE" : "FALSE");
 		fprintf(file, "SIDFilters = %s\n", SIDFilters ? "TRUE" : "FALSE");
-		fprintf(file, "DoubleScan = %s\n", DoubleScan ? "TRUE" : "FALSE");
 		fprintf(file, "HideCursor = %s\n", HideCursor ? "TRUE" : "FALSE");
 		fprintf(file, "DirectSound = %s\n", DirectSound ? "TRUE" : "FALSE");
 		fprintf(file, "ExclusiveSound = %s\n", ExclusiveSound ? "TRUE" : "FALSE");
-		fprintf(file, "AutoPause = %s\n", AutoPause ? "TRUE" : "FALSE");
 		fprintf(file, "PrefsAtStartup = %s\n", PrefsAtStartup ? "TRUE" : "FALSE");
 		fprintf(file, "SystemMemory = %s\n", SystemMemory ? "TRUE" : "FALSE");
 		fprintf(file, "AlwaysCopy = %s\n", AlwaysCopy ? "TRUE" : "FALSE");

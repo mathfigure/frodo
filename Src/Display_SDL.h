@@ -148,8 +148,7 @@ static void set_projection()
 
 static void video_resized(int width, int height)
 {
-	uint32 flags = (ThePrefs.DisplayType == DISPTYPE_SCREEN ? SDL_FULLSCREEN : 0);
-	flags |= (SDL_ANYFORMAT | SDL_OPENGL | SDL_RESIZABLE);
+	uint32 flags = SDL_ANYFORMAT | SDL_OPENGL | SDL_RESIZABLE;
 	SDL_SetVideoMode(width, height, 16, flags);
 	set_projection();
 }
@@ -167,7 +166,7 @@ C64Display::C64Display(C64 *the_c64) : TheC64(the_c64)
 
 	// Open window
 	SDL_WM_SetCaption(VERSION_STRING, "Frodo");
-	uint32 flags = (ThePrefs.DisplayType == DISPTYPE_SCREEN ? SDL_FULLSCREEN : 0);
+	uint32 flags = 0;
 
 #ifdef ENABLE_OPENGL
 
@@ -304,10 +303,6 @@ C64Display::C64Display(C64 *the_c64) : TheC64(the_c64)
 	screen = SDL_SetVideoMode(FRAME_WIDTH, FRAME_HEIGHT, 8, flags);
 
 #endif
-
-	// Hide mouse pointer in fullscreen mode
-	if (ThePrefs.DisplayType == DISPTYPE_SCREEN)
-		SDL_ShowCursor(0);
 
 	// LEDs off
 	for (int i=0; i<4; i++)
@@ -669,26 +664,14 @@ void C64Display::PollKeyboard(uint8 *key_matrix, uint8 *rev_matrix, uint8 *joyst
 				switch (event.key.keysym.sym) {
 
 					case SDLK_F9:	// F9: Invoke SAM
-						if (ThePrefs.DisplayType == DISPTYPE_WINDOW)  // don't invoke in fullscreen mode
-							SAM(TheC64);
+						SAM(TheC64);
 						break;
 
 					case SDLK_F10:	// F10: Prefs/Quit
 						TheC64->Pause();
-						if (ThePrefs.DisplayType == DISPTYPE_SCREEN) {  // exit fullscreen mode
-							SDL_WM_ToggleFullScreen(SDL_GetVideoSurface());
-							SDL_ShowCursor(1);
-						}
-
 						if (!TheApp->RunPrefsEditor()) {
 							quit_requested = true;
-						} else {
-							if (ThePrefs.DisplayType == DISPTYPE_SCREEN) {  // enter fullscreen mode
-								SDL_ShowCursor(0);
-								SDL_WM_ToggleFullScreen(SDL_GetVideoSurface());
-							}
 						}
-
 						TheC64->Resume();
 						break;
 
@@ -826,7 +809,7 @@ uint8 C64::poll_joystick(int port)
  *  Allocate C64 colors
  */
 
-void C64Display::InitColors(uint8 *colors)
+void C64Display::InitColors(void)
 {
 	SDL_Color palette[PALETTE_SIZE];
 	for (int i=0; i<16; i++) {
@@ -842,9 +825,6 @@ void C64Display::InitColors(uint8 *colors)
 	palette[green].g = 0xf0;
 	palette[green].r = palette[green].b = 0;
 	SDL_SetColors(screen, palette, 0, PALETTE_SIZE);
-
-	for (int i=0; i<256; i++)
-		colors[i] = i & 0x0f;
 }
 
 

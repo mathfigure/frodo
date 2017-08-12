@@ -170,21 +170,6 @@ void Prefs::SetupControls(int page)
 		SetupComboAdd(IDC_VIEWPORT, "320x200");
 		SetupComboAdd(IDC_VIEWPORT, "336x216");
 		SetupComboAdd(IDC_VIEWPORT, "384x272");
-		SetupComboClear(IDC_DISPLAYMODE);
-		SetupComboAdd(IDC_DISPLAYMODE, "Default");
-		{
-			C64Display *TheDisplay = TheC64->TheDisplay;
-			int n = TheDisplay->GetNumDisplayModes();
-			const C64Display::DisplayMode *modes =
-				TheDisplay->GetDisplayModes();
-			for (int i = 0; i < n; i++) {
-				char mode[64];
-				sprintf(mode, "%dx%dx%d%s",
-					modes[i].x, modes[i].y, modes[i].depth,
-					modes[i].modex ? " (ModeX)" : "");
-				SetupComboAdd(IDC_DISPLAYMODE, mode);
-			}
-		}
 		SetupSpin(IDC_SCALINGNUMERATOR_SPIN, 16, 1);
 		SetupSpin(IDC_SCALINGDENOMINATOR_SPIN, 4, 1);
 		SetupSpin(IDC_LATENCYMIN_SPIN, 1000, 20);
@@ -237,11 +222,9 @@ void Prefs::SetValues(int page)
 		break;
 
 	case WIN32_PAGE:
-		SetCheckBox(IDC_FULLSCREEN, DisplayType == DISPTYPE_SCREEN);
 		SetCheckBox(IDC_SYSTEMMEMORY, SystemMemory);
 		SetCheckBox(IDC_ALWAYSCOPY, AlwaysCopy);
 		SetText(IDC_VIEWPORT, ViewPort);
-		SetText(IDC_DISPLAYMODE, DisplayMode);
 
 		SetCheckBox(IDC_HIDECURSOR, HideCursor);
 		SetCheckBox(IDC_SYSTEMKEYS, SystemKeys);
@@ -254,7 +237,6 @@ void Prefs::SetValues(int page)
 		SetInteger(IDC_LATENCYMAX, LatencyMax);
 		SetInteger(IDC_LATENCYAVG, LatencyAvg);
 
-		SetCheckBox(IDC_AUTOPAUSE, AutoPause);
 		SetCheckBox(IDC_PREFSATSTARTUP, PrefsAtStartup);
 		SetCheckBox(IDC_SHOWLEDS, ShowLEDs);
 		break;
@@ -306,12 +288,9 @@ void Prefs::GetValues(int page)
 		break;
 
 	case WIN32_PAGE:
-		GetCheckBox(IDC_FULLSCREEN, temp);
-		DisplayType = temp ? DISPTYPE_SCREEN : DISPTYPE_WINDOW;
 		GetCheckBox(IDC_SYSTEMMEMORY, SystemMemory);
 		GetCheckBox(IDC_ALWAYSCOPY, AlwaysCopy);
 		GetText(IDC_VIEWPORT, ViewPort);
-		GetText(IDC_DISPLAYMODE, DisplayMode);
 
 		GetCheckBox(IDC_HIDECURSOR, HideCursor);
 		GetCheckBox(IDC_SYSTEMKEYS, SystemKeys);
@@ -324,7 +303,6 @@ void Prefs::GetValues(int page)
 		GetInteger(IDC_LATENCYMAX, LatencyMax);
 		GetInteger(IDC_LATENCYAVG, LatencyAvg);
 
-		GetCheckBox(IDC_AUTOPAUSE, AutoPause);
 		GetCheckBox(IDC_PREFSATSTARTUP, PrefsAtStartup);
 		GetCheckBox(IDC_SHOWLEDS, ShowLEDs);
 		break;

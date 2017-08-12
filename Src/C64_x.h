@@ -132,10 +132,18 @@ void C64::c64_ctor1(void)
 
 void C64::c64_ctor2(void)
 {
-   	printf("Use F9 to enter the SAM machine language monitor,\n"
-   	       "F10 to edit preferences or quit,\n"
-	       "PgUp to cause an NMI (RESTORE key) and\n"
-   	       "F12 to reset the C64.\n\n");
+	printf( "Use PgUp to cause an NMI (RESTORE key)\n"
+		"F9  to enter the SAM machine language monitor\n"
+#ifdef HAVE_GLADE
+		"F10 to edit preferences or quit\n"
+#else
+		"F10 to reload the preferences\n"
+#endif
+		"F12 to reset the C64\n"
+#ifndef HAVE_GLADE
+		"ALT+Q to quit properly\n\n"
+#endif
+		);
   
 	gettimeofday(&tv_start, NULL);
 }

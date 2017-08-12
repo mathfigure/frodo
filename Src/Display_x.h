@@ -27,13 +27,6 @@
 #include <X11/keysym.h>
 #include <X11/cursorfont.h>
 
-#if defined(X_USE_SHM)
-#include <sys/ipc.h>
-#include <sys/shm.h>
-#include <X11/extensions/XShm.h>
-static XShmSegmentInfo shminfo;
-#endif
-
 static Display *display;
 static int screen;
 static Window rootwin, mywin;
@@ -48,6 +41,8 @@ static Visual *vis;
 static XVisualInfo visualInfo;
 static int bitdepth;
 static char *bufmem;
+static uint32 *pixels;
+static uint32 palette[16];
 static int hsize;
 
 // For LED error blinking
@@ -100,6 +95,8 @@ static const long int eventmask = (KeyPressMask|KeyReleaseMask|FocusChangeMask|E
 #define KEY_KP_MULT 527
 #define KEY_NUM_LOCK 528
 #define KEY_PAGE_UP 529
+
+#define ALT_Q 530
 
 
 /*
@@ -263,6 +260,8 @@ static int keycode2c64(XKeyEvent *event)
 
 	do {
 		ks = XLookupKeysym(event, index);
+		if((event->state & Mod1Mask) && (ks == XK_Q || ks == XK_q))
+			return ALT_Q;
 		as = kc_decode(ks);
        
 		if (as == -1)
@@ -378,10 +377,7 @@ int init_graphics(void)
 
 	screen = XDefaultScreen(display);
 	rootwin = XRootWindow(display, screen);
-	if (XMatchVisualInfo(display, screen, 8, PseudoColor, &visualInfo)) {
-		/* for our HP boxes */
-	} else if (XMatchVisualInfo(display, screen, 8, GrayScale, &visualInfo)) {
-	} else {
+	if (!XMatchVisualInfo(display, screen, 32, TrueColor, &visualInfo)) {
 		fprintf(stderr, "Can't obtain appropriate X visual\n");
 		return 0;
 	}
@@ -393,22 +389,9 @@ int init_graphics(void)
 
 	hsize = (DISPLAY_X + 3) & ~3;
 
-#if defined(X_USE_SHM)
-        img = XShmCreateImage(display, vis, bitdepth, ZPixmap, 0, &shminfo,
-			      hsize, DISPLAY_Y);
-        
-        shminfo.shmid = shmget(IPC_PRIVATE, DISPLAY_Y * img->bytes_per_line,
-                               IPC_CREAT | 0777);
-        shminfo.shmaddr = img->data = bufmem = (char *)shmat(shminfo.shmid, 0, 0);
-        shminfo.readOnly = False;
-        XShmAttach(display, &shminfo);
-        XSync(display,0);
-        /* now deleting means making it temporary */
-        shmctl(shminfo.shmid, IPC_RMID, 0);
-#else
-	bufmem = (char *)malloc(pixbytes * hsize * DISPLAY_Y);
-	img = XCreateImage(display, vis, bitdepth, ZPixmap, 0, bufmem, hsize, DISPLAY_Y, 32, 0);
-#endif
+	bufmem = (char *)malloc(hsize * DISPLAY_Y);
+	pixels = (uint32 *)malloc(pixbytes * hsize * DISPLAY_Y);
+	img = XCreateImage(display, vis, bitdepth, ZPixmap, 0, (char*)pixels, hsize, DISPLAY_Y, 32, 0);
 
 	cmap = XCreateColormap(display, rootwin, vis, AllocNone);
 
@@ -458,7 +441,11 @@ int init_graphics(void)
 		return 0;
 
 	// Load font for speedometer/LED labels
-	led_font = XLoadFont(display, "-*-helvetica-medium-r-*-*-10-*");
+	XFontStruct *fs;
+	fs = XLoadQueryFont(display, "-*-helvetica-medium-r-*-*-10-*");
+	if(fs == NULL)
+		fs = XLoadQueryFont(display, "-*-*-medium-r-*-*-10-*");
+	led_font = fs->fid;
 
 	for(i=0; i<256; i++)
 		keystate[i] = 0;
@@ -475,11 +462,10 @@ void C64Display::Update(void)
 {
 	// Update C64 display
 	XSync(display, 0);
-#if defined(X_USE_SHM)
-	XShmPutImage(display, mywin, black_gc, img, 0, 0, 0, 0, DISPLAY_X, DISPLAY_Y, 0);
-#else
+	for(int y=0; y<DISPLAY_Y; y++)
+	  for(int x=0; x<hsize; x++)
+		pixels[y*hsize+x] = palette[bufmem[y*hsize+x]];
  	XPutImage(display, mywin, black_gc, img, 0, 0, 0, 0, DISPLAY_X, DISPLAY_Y);
-#endif
 
 	// Update drive LEDs
 	for (int i=0; i<4; i++)
@@ -591,12 +577,19 @@ void C64Display::PollKeyboard(uint8 *key_matrix, uint8 *rev_matrix, uint8 *joyst
 					break;
 				switch (kc) {
 
+					case ALT_Q:	// ALT+Q: Quit
+						quit_requested = true;
+						break;
+
 					case KEY_F9:	// F9: Invoke SAM
 						SAM(TheC64);
 						break;
 
-					case KEY_F10:	// F10: Quit
-						quit_requested = true;
+					case KEY_F10:	// F10: Preferences/Quit
+						TheC64->Pause();
+						if(!TheApp->RunPrefsEditor())
+							quit_requested = true;
+						TheC64->Resume();
 						break;
 
 					case KEY_PAGE_UP:	// PgUp: NMI (Restore)
@@ -773,19 +766,13 @@ uint8 C64::poll_joystick(int port)
  *  Allocate C64 colors
  */
 
-void C64Display::InitColors(uint8 *colors)
+void C64Display::InitColors(void)
 {
-	int i;
-	XColor col;
-	char str[20];
-
-	for (i=0; i< 256; i++) {
-		sprintf(str, "rgb:%x/%x/%x", palette_red[i & 0x0f], palette_green[i & 0x0f], palette_blue[i & 0x0f]);
-		XParseColor(display, cmap, str, &col);
-		if (XAllocColor(display, cmap, &col))
-			colors[i] = col.pixel;
-		else
-			fprintf(stderr, "Couldn't get all colors\n");
+	for (int i = 0; i < 16; i++) {
+		int r = palette_red[i];
+		int g = palette_green[i];
+		int b = palette_blue[i];
+		palette[i] = 0xff000000 | r << 16 | g << 8 | b;	// blue LSB
 	}
 }
 

@@ -55,7 +55,6 @@ BEGIN
         MENUITEM "&Preferences...",             ID_TOOLS_PREFERENCES
         MENUITEM SEPARATOR
         MENUITEM "P&ause\tPause",               ID_TOOLS_PAUSE
-        MENUITEM "&Fullscreen\tAlt-Enter",      ID_TOOLS_FULLSCREEN
         MENUITEM "Reset &DirectDraw\tCtrl-Enter", ID_TOOLS_RESETDIRECTDRAW
         MENUITEM SEPARATOR
         MENUITEM "Reset &C64\tF12",             ID_TOOLS_RESETC64
@@ -159,17 +158,12 @@ CAPTION "WIN32"
 FONT 8, "MS Sans Serif"
 BEGIN
     GROUPBOX        "&Video",IDC_STATIC,5,0,260,60
-    CONTROL         "Fullscreen at startup",IDC_FULLSCREEN,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,15,15,85,10
     CONTROL         "System Memory",IDC_SYSTEMMEMORY,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,15,30,85,10
     CONTROL         "Always Copy",IDC_ALWAYSCOPY,"Button",BS_AUTOCHECKBOX | 
                     WS_TABSTOP,15,45,85,10
     LTEXT           "View&port",IDC_STATIC,110,20,70,8
     COMBOBOX        IDC_VIEWPORT,110,31,70,184,CBS_DROPDOWN | 
-                    CBS_AUTOHSCROLL | WS_VSCROLL | WS_TABSTOP
-    LTEXT           "Display &Mode",IDC_STATIC,185,20,70,8
-    COMBOBOX        IDC_DISPLAYMODE,185,31,70,184,CBS_DROPDOWN | 
                     CBS_AUTOHSCROLL | WS_VSCROLL | WS_TABSTOP
     GROUPBOX        "&Window",IDC_STATIC,5,65,260,50
     CONTROL         "Hide Cursor",IDC_HIDECURSOR,"Button",BS_AUTOCHECKBOX | 
@@ -207,8 +201,6 @@ BEGIN
                     UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY | 
                     UDS_ARROWKEYS,245,140,11,14
     GROUPBOX        "&General",IDC_STATIC,5,170,260,45
-    CONTROL         "Auto Pause",IDC_AUTOPAUSE,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,15,185,85,10
     CONTROL         "Show LEDs",IDC_SHOWLEDS,"Button",BS_AUTOCHECKBOX | 
                     WS_TABSTOP,105,185,85,10
     CONTROL         "Preferences at startup",IDC_PREFSATSTARTUP,"Button",
