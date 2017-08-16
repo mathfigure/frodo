@@ -11,8 +11,14 @@ git clone -b frodo-redpill https://github.com/mathfigure/frodo
 ### Build
 ```bash
 cd frodo/Src
-./autogen.sh
-make
+# configure, choose one of:
+./autogen.sh                                # SDL + GLADE (recommended)
+./autogen.sh --enable-opengl                # SDL + GLADE + OPENGL
+./autogen.sh --disable-glade                # SDL
+./autogen.sh --disable-sdl                  # X11 + GLADE
+./autogen.sh --disable-sdl --disable-glade  # X11 (minimal)
+# make
+make -B -j4
 ```
 
 ### Install
