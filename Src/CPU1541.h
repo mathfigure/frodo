@@ -52,7 +52,7 @@ public:
 	void SetState(MOS6502State *s);
 	uint8 ExtReadByte(uint16 adr);
 	void ExtWriteByte(uint16 adr, uint8 byte);
-	void CountVIATimers(int cycles);
+	void CountVIATimers(void);
 	void NewATNState(void);
 	void IECInterrupt(void);
 	void TriggerJobIRQ(void);
@@ -198,11 +198,11 @@ inline void MOS6502_1541::TriggerJobIRQ(void)
  *  Count VIA timers
  */
 
-inline void MOS6502_1541::CountVIATimers(int cycles)
+inline void MOS6502_1541::CountVIATimers(void)
 {
 	unsigned long tmp;
 
-	via1_t1c = tmp = via1_t1c - cycles;
+	via1_t1c = tmp = via1_t1c - 1;
 	if (tmp > 0xffff) {
 		if (via1_acr & 0x40)	// Reload from latch in free-run mode
 			via1_t1c = via1_t1l;
@@ -210,12 +210,12 @@ inline void MOS6502_1541::CountVIATimers(int cycles)
 	}
 
 	if (!(via1_acr & 0x20)) {	// Only count in one-shot mode
-		via1_t2c = tmp = via1_t2c - cycles;
+		via1_t2c = tmp = via1_t2c - 1;
 		if (tmp > 0xffff)
 			via1_ifr |= 0x20;
 	}
 
-	via2_t1c = tmp = via2_t1c - cycles;
+	via2_t1c = tmp = via2_t1c - 1;
 	if (tmp > 0xffff) {
 		if (via2_acr & 0x40)	// Reload from latch in free-run mode
 			via2_t1c = via2_t1l;
@@ -225,7 +225,7 @@ inline void MOS6502_1541::CountVIATimers(int cycles)
 	}
 
 	if (!(via2_acr & 0x20)) {	// Only count in one-shot mode
-		via2_t2c = tmp = via2_t2c - cycles;
+		via2_t2c = tmp = via2_t2c - 1;
 		if (tmp > 0xffff)
 			via2_ifr |= 0x20;
 	}

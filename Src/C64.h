@@ -102,8 +102,8 @@ private:
 	void open_close_joysticks(int oldjoy1, int oldjoy2, int newjoy1, int newjoy2);
 	uint8 poll_joystick(int port);
 	void thread_func(void);
+	void EmulateCycle();
 
-	bool thread_running;	// Emulation thread is running
 	bool quit_thyself;		// Emulation thread shall quit
 	bool have_a_break;		// Emulation thread shall pause
 
@@ -126,7 +126,6 @@ private:
 	void StopTimer();
 	static void CALLBACK StaticTimeProc(UINT uID, UINT uMsg, DWORD dwUser, DWORD dw1, DWORD dw2);
 	void TimeProc(UINT id);
-	void EmulateCycles();
 
 	DWORD ref_time;				// when frame count was reset
 	int skipped_frames;			// number of skipped frames

@@ -42,7 +42,6 @@ C64::C64()
 	uint8 *p;
 
 	// The thread is not yet running
-	thread_running = false;
 	quit_thyself = false;
 	have_a_break = false;
 
@@ -480,17 +479,6 @@ bool C64::Load1541JobState(FILE *f)
 #define SNAPSHOT_HEADER "FrodoSnapshot"
 #define SNAPSHOT_1541 1
 
-#define ADVANCE_CYCLES	\
-	TheVIC->EmulateCycle(); \
-	TheCIA1->EmulateCycle(); \
-	TheCIA2->EmulateCycle(); \
-	TheCPU->EmulateCycle(); \
-	if (ThePrefs.Emul1541Proc) { \
-		TheCPU1541->CountVIATimers(1); \
-		if (!TheCPU1541->Idle) \
-			TheCPU1541->EmulateCycle(); \
-	}
-
 
 /*
  *  Save snapshot (emulation must be paused and in VBlank)
@@ -527,7 +515,7 @@ void C64::SaveSnapshot(char *filename)
 	delay = 0;
 	do {
 		if ((stat = SaveCPUState(f)) == -1) {	// -1 -> Instruction not finished yet
-			ADVANCE_CYCLES;	// Advance everything by one cycle
+			EmulateCycle();	// Advance everything by one cycle
 			delay++;
 		}
 	} while (stat == -1);
@@ -538,7 +526,7 @@ void C64::SaveSnapshot(char *filename)
 		delay = 0;
 		do {
 			if ((stat = Save1541State(f)) == -1) {
-				ADVANCE_CYCLES;
+				EmulateCycle();
 				delay++;
 			}
 		} while (stat == -1);
@@ -680,6 +668,24 @@ bool C64::ImportPRG(char *filename)
 	return false;
 }
 
+
+void C64::EmulateCycle()
+{
+	// The order of calls is important here
+	if (TheVIC->EmulateCycle())
+		TheSID->EmulateLine();
+	TheCIA1->CheckIRQs();
+	TheCIA2->CheckIRQs();
+	TheCIA1->EmulateCycle();
+	TheCIA2->EmulateCycle();
+	TheCPU->EmulateCycle();
+	if (ThePrefs.Emul1541Proc) {
+		TheCPU1541->CountVIATimers();
+		if (!TheCPU1541->Idle)
+			TheCPU1541->EmulateCycle();
+	}
+	CycleCounter++;
+}
 
 
 

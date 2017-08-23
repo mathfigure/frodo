@@ -361,41 +361,12 @@ void C64::TimeProc(UINT id)
 void C64::thread_func()
 {
 	Debug("C64::thread_func\n");
-
-	thread_running = TRUE;
-
 	while (!quit_thyself) {
-
 		if (have_a_break)
 			TheDisplay->WaitUntilActive();
-
-		EmulateCycles();
+		while (!state_change)
+			EmulateCycle();
 		state_change = FALSE;
-	}
-
-	thread_running = FALSE;
-
-}
-
-
-void C64::EmulateCycles()
-{
-	thread_running = TRUE;
-	while (!state_change) {
-		// The order of calls is important here
-		if (TheVIC->EmulateCycle())
-			TheSID->EmulateLine();
-		TheCIA1->CheckIRQs();
-		TheCIA2->CheckIRQs();
-		TheCIA1->EmulateCycle();
-		TheCIA2->EmulateCycle();
-		TheCPU->EmulateCycle();
-		if (ThePrefs.Emul1541Proc) {
-			TheCPU1541->CountVIATimers(1);
-			if (!TheCPU1541->Idle)
-				TheCPU1541->EmulateCycle();
-		}
-		CycleCounter++;
 	}
 }
 
