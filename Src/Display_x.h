@@ -235,23 +235,6 @@ static int decode_us(KeySym ks)
 	return -1;
 }
 
-static int decode_de(KeySym ks)
-{
-	switch(ks) {	/* DE specific */
-		case XK_ssharp: return MATRIX(5,0);
-		case XK_apostrophe: return MATRIX(5,3);
-		case XK_Udiaeresis: case XK_udiaeresis: return MATRIX(5,6);
-		case XK_plus: return MATRIX(6,1);
-		case XK_Odiaeresis: case XK_odiaeresis: return MATRIX(5,5);
-		case XK_Adiaeresis: case XK_adiaeresis: return MATRIX(6,2);
-		case XK_numbersign: return MATRIX(6,5);
-		case XK_less: case XK_greater: return MATRIX(6,0);
-		case XK_minus: return MATRIX(6,7);
-	}
-
-	return -1;
-}
-
 static int keycode2c64(XKeyEvent *event)
 {
 	KeySym ks;
@@ -265,7 +248,7 @@ static int keycode2c64(XKeyEvent *event)
 		as = kc_decode(ks);
        
 		if (as == -1)
-			as = KBD_LANG == 0 ? decode_us(ks) : decode_de(ks);
+			as = decode_us(ks);
 		if (as != -1)
 			return as;
 		index++;

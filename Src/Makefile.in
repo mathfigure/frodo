@@ -13,7 +13,7 @@ datadir = @datadir@
 DESTDIR =
 
 CXX = @CXX@
-CFLAGS = @CFLAGS@ @GLADE_CFLAGS@ -I./ -DKBD_LANG=@KBD_LANG@
+CFLAGS = @CFLAGS@ @GLADE_CFLAGS@ -I./
 DEFS = @DEFS@ -DDATADIR=\"$(datadir)/frodo/\" -DBINDIR=\"$(bindir)/\"
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@ @GLADE_LIBS@ -lrt

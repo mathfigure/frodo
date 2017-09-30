@@ -75,10 +75,6 @@ AC_TYPE_SIGNAL
 AC_FUNC_UTIME_NULL
 AC_CHECK_FUNCS(gettimeofday sigaction mkdir rmdir select strerror strstr statfs usleep)
 
-KBD_LANG=0
-AC_ARG_ENABLE(kbd-lang-de,[  --enable-kbd-lang-de    Use german keyboard layout],[KBD_LANG=1],[])
-AC_ARG_ENABLE(kbd-lang-us,[  --enable-kbd-lang-us    Use american keyboard layout],[KBD_LANG=0],[])
-
 AC_MSG_CHECKING(which target to use)
 if [[ x"$HAVE_SDL" = "xyes" ]]; then
   AC_MSG_RESULT([SDL])
@@ -112,7 +108,6 @@ fi
 AC_SUBST(TARGET)
 AC_SUBST(SET_MAKE)
 AC_SUBST(top_srcdir)
-AC_SUBST(KBD_LANG)
 
 dnl Generate Makefile.
 AC_CONFIG_FILES([Makefile])
