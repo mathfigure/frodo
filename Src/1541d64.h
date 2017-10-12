@@ -105,7 +105,6 @@ private:
 
 	bool read_sector(int track, int sector, uint8 *buffer);
 	bool write_sector(int track, int sector, uint8 *buffer);
-	void write_error_info(void);
 
 	virtual void block_read_cmd(int channel, int track, int sector, bool user_cmd = false);
 	virtual void block_write_cmd(int channel, int track, int sector, bool user_cmd = false);
@@ -145,8 +144,5 @@ extern bool IsImageFile(const char *path, const uint8 *header, long size);
 
 // Read directory of disk image file into (empty) c64_dir_entry vector
 extern bool ReadImageDirectory(const char *path, vector<c64_dir_entry> &vec);
-
-// Create new blank disk image file
-extern bool CreateImageFile(const char *path);
 
 #endif

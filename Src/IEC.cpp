@@ -934,21 +934,3 @@ bool IsMountableFile(const char *path, int &type)
 		return false;
 }
 
-
-/*
- *  Read directory of mountable disk image or archive file into c64_dir_entry vector,
- *  returns false on error
- */
-
-bool ReadDirectory(const char *path, int type, vector<c64_dir_entry> &vec)
-{
-	vec.clear();
-	switch (type) {
-		case FILE_IMAGE:
-			return ReadImageDirectory(path, vec);
-		case FILE_ARCH:
-			return ReadArchDirectory(path, vec);
-		default:
-			return false;
-	}
-}

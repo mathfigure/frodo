@@ -111,14 +111,10 @@ private:
 	BOOL ResumeDirectDraw();
 	BOOL ResetDirectDraw();
 	BOOL StopDirectDraw();
-	static HRESULT CALLBACK EnumModesCallback(LPDDSURFACEDESC pDDSD, LPVOID lpContext);
-	HRESULT EnumModesCallback(LPDDSURFACEDESC pDDSD);
-	static int CompareModes(const void *e1, const void *e2);
 	BOOL Fail(const char *message);
 
 	// DirectDraw worker members.
 	BOOL CopySurface(RECT &rcWork);
-	BOOL FlipSurfaces();
 	BOOL EraseSurfaces();
 	BOOL RestoreSurfaces();
 

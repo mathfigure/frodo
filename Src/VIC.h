@@ -50,7 +50,6 @@ public:
 	uint8 LastVICByte;
 
 private:
-	void vblank(void);
 	void raster_irq(void);
 
 	uint16 mx[8];				// VIC registers

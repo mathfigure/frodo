@@ -56,7 +56,6 @@ public:
 	void NewATNState(void);
 	void IECInterrupt(void);
 	void TriggerJobIRQ(void);
-	bool InterruptEnabled(void);
 
 	MOS6526_2 *TheCIA2;		// Pointer to C64 CIA 2
 
@@ -70,13 +69,7 @@ private:
 	void write_byte(uint16 adr, uint8 byte);
 	void write_byte_io(uint16 adr, uint8 byte);
 
-	uint8 read_zp(uint16 adr);
-	uint16 read_zp_word(uint16 adr);
-	void write_zp(uint16 adr, uint8 byte);
-
-	void jump(uint16 adr);
 	void illegal_op(uint8 op, uint16 at);
-	void illegal_jump(uint16 at, uint16 to);
 
 	void do_adc(uint8 byte);
 	void do_sbc(uint8 byte);
@@ -254,16 +247,6 @@ inline void MOS6502_1541::IECInterrupt(void)
 
 	// Wake up 1541
 	Idle = false;
-}
-
-
-/*
- *  Test if interrupts are enabled (for job loop)
- */
-
-inline bool MOS6502_1541::InterruptEnabled(void)
-{
-	return !i_flag;
 }
 
 #endif

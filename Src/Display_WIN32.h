@@ -1594,25 +1594,6 @@ BOOL C64Display::CopySurface(RECT &rcWork)
 	return TRUE;
 }
 
-BOOL C64Display::FlipSurfaces()
-{
-	// Flip buffers.
-	for (;;) {
-		HRESULT ddrval = pPrimary->Flip(NULL, 0);
-		if (ddrval == DD_OK)
-			break;
-		if (ddrval == DDERR_SURFACELOST) {
-			ddrval = pPrimary->Restore();
-			if (ddrval != DD_OK) {
-				Debug("Restore failed\n");
-				return FALSE;
-			}
-		}
-		else if (ddrval != DDERR_WASSTILLDRAWING)
-			return FALSE;
-	}
-	return TRUE;
-}
 
 BOOL C64Display::EraseSurfaces()
 {

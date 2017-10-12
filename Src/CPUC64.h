@@ -83,13 +83,8 @@ private:
 	void write_byte(uint16 adr, uint8 byte);
 	void write_byte_io(uint16 adr, uint8 byte);
 
-	uint8 read_zp(uint16 adr);
-	uint16 read_zp_word(uint16 adr);
-	void write_zp(uint16 adr, uint8 byte);
-
 	void new_config(void);
 	void illegal_op(uint8 op, uint16 at);
-	void illegal_jump(uint16 at, uint16 to);
 
 	void do_adc(uint8 byte);
 	void do_sbc(uint8 byte);

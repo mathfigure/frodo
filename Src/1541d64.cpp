@@ -2138,36 +2138,3 @@ done:	fclose(f);
 	return result;
 }
 
-
-/*
- *  Create new blank disk image file, returns false on error
- */
-
-bool CreateImageFile(const char *path)
-{
-	// Open file for writing
-	FILE *f = fopen(path, "wb");
-	if (f == NULL)
-		return false;
-
-	// Create descriptor
-	image_file_desc desc;
-	desc.type = TYPE_D64;
-	desc.header_size = 0;
-	desc.num_tracks = 35;
-	desc.id1 = 'F';
-	desc.id1 = 'R';
-	memset(desc.error_info, 1, sizeof(desc.error_info));
-	desc.has_error_info = false;
-
-	// Format image file
-	if (!format_image(f, desc, true, 'F', 'R', (uint8 *)"D64 FILE", 8)) {
-		fclose(f);
-		remove(path);
-		return false;
-	}
-
-	// Close file
-	fclose(f);
-	return true;
-}
