@@ -616,12 +616,20 @@ static void translate_key(SDLKey key, bool key_up, uint8 *key_matrix, uint8 *rev
 void C64Display::PollKeyboard(uint8 *key_matrix, uint8 *rev_matrix, uint8 *joystick)
 {
 	SDL_Event event;
+	SDL_keysym key;
 	while (SDL_PollEvent(&event)) {
 		switch (event.type) {
 
 			// Key pressed
 			case SDL_KEYDOWN:
-				switch (event.key.keysym.sym) {
+				key = event.key.keysym;
+				if(key.mod & KMOD_ALT) {	// System key
+					switch (key.sym) {
+					case SDLK_q:	// ALT-Q: Quit
+						quit_requested = true;
+						break;
+					}
+				} else switch (key.sym) {	// Normal key
 
 					case SDLK_F9:	// F9: Invoke SAM
 						SAM(TheC64);
@@ -651,7 +659,7 @@ void C64Display::PollKeyboard(uint8 *key_matrix, uint8 *rev_matrix, uint8 *joyst
 						ThePrefs.LimitSpeed = !ThePrefs.LimitSpeed;
 						break;
 
-					default:
+					default:		// C64 Key
 						translate_key(event.key.keysym.sym, false, key_matrix, rev_matrix, joystick);
 						break;
 				}

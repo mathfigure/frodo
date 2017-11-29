@@ -48,7 +48,7 @@ BEGIN
         MENUITEM "&Save",                       ID_FILE_SAVE
         MENUITEM "Save &As...",                 ID_FILE_SAVEAS
         MENUITEM SEPARATOR
-        MENUITEM "E&xit\tF10",                  ID_FILE_EX
+        MENUITEM "E&xit\tALT+Q",                ID_FILE_EX
     END
     POPUP "&Tools"
     BEGIN

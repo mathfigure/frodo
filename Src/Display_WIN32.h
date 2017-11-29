@@ -894,6 +894,7 @@ long C64Display::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		break;
 
 	case WM_SYSKEYDOWN:
+		if(wParam == 'Q') {Quit(); break;}	// ALT-Q: Quit
 	case WM_KEYDOWN:
 		Debug("Display::WindowProc: KEYDOWN: 0x%x\n", wParam);
 		{
