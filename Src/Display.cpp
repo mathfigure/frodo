@@ -84,6 +84,58 @@ void C64Display::UpdateLEDs(int l0, int l1, int l2, int l3)
 }
 
 
+#ifdef __unix
+
+// For LED error blinking
+static C64Display *c64_disp;
+static struct sigaction pulse_sa;
+static itimerval pulse_tv;
+
+void C64Display::pulse_handler_init(C64Display *disp)
+{
+	// Start timer for LED error blinking
+	c64_disp = disp;
+	pulse_sa.sa_handler = (void (*)(int))pulse_handler;
+	pulse_sa.sa_flags = SA_RESTART;
+	sigemptyset(&pulse_sa.sa_mask);
+	sigaction(SIGALRM, &pulse_sa, NULL);
+	pulse_tv.it_interval.tv_sec = 0;
+	pulse_tv.it_interval.tv_usec = 400000;
+	pulse_tv.it_value.tv_sec = 0;
+	pulse_tv.it_value.tv_usec = 400000;
+	setitimer(ITIMER_REAL, &pulse_tv, NULL);
+}
+
+
+void C64Display::pulse_handler_free()
+{
+	pulse_tv.it_interval.tv_sec = 0;
+	pulse_tv.it_interval.tv_usec = 0;
+	pulse_tv.it_value.tv_sec = 0;
+	pulse_tv.it_value.tv_usec = 0;
+	setitimer(ITIMER_REAL, &pulse_tv, NULL);
+}
+
+/*
+ *  LED error blink
+ */
+
+void C64Display::pulse_handler(...)
+{
+	for (int i=0; i<4; i++)
+		switch (c64_disp->led_state[i]) {
+			case LED_ERROR_ON:
+				c64_disp->led_state[i] = LED_ERROR_OFF;
+				break;
+			case LED_ERROR_OFF:
+				c64_disp->led_state[i] = LED_ERROR_ON;
+				break;
+		}
+}
+
+#endif
+
+
 #if   defined(HAVE_SDL)
 #  include "Display_SDL.h"
 #elif defined(__unix)

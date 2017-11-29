@@ -45,11 +45,6 @@ static uint32 *pixels;
 static uint32 palette[16];
 static int hsize;
 
-// For LED error blinking
-static C64Display *c64_disp;
-static struct sigaction pulse_sa;
-static itimerval pulse_tv;
-
 // Keyboard and joystick
 static int keystate[256];
 static int joystate = 0xFF;
@@ -305,17 +300,7 @@ C64Display::C64Display(C64 *the_c64) : TheC64(the_c64)
 		draw_led(i, LED_OFF);
 	}
 
-	// Start timer for LED error blinking
-	c64_disp = this;
-	pulse_sa.sa_handler = (void (*)(int))pulse_handler;
-	pulse_sa.sa_flags = SA_RESTART;
-	sigemptyset(&pulse_sa.sa_mask);
-	sigaction(SIGALRM, &pulse_sa, NULL);
-	pulse_tv.it_interval.tv_sec = 0;
-	pulse_tv.it_interval.tv_usec = 400000;
-	pulse_tv.it_value.tv_sec = 0;
-	pulse_tv.it_value.tv_usec = 400000;
-	setitimer(ITIMER_REAL, &pulse_tv, NULL);
+	pulse_handler_init(this);
 }
 
 
@@ -325,7 +310,7 @@ C64Display::C64Display(C64 *the_c64) : TheC64(the_c64)
 
 C64Display::~C64Display()
 {
-	XAutoRepeatOn(display);
+	pulse_handler_free();
 	XSync(display, 0);
 }
 
@@ -478,24 +463,6 @@ void C64Display::draw_led(int num, int state)
 			break;
 	}
 	XFillRectangle(display, mywin, led_gc, DISPLAY_X*(num+2)/5-23, DISPLAY_Y+5, 14, 6);
-}
-
-
-/*
- *  LED error blink
- */
-
-void C64Display::pulse_handler(...)
-{
-	for (int i=0; i<4; i++)
-		switch (c64_disp->led_state[i]) {
-			case LED_ERROR_ON:
-				c64_disp->led_state[i] = LED_ERROR_OFF;
-				break;
-			case LED_ERROR_OFF:
-				c64_disp->led_state[i] = LED_ERROR_ON;
-				break;
-		}
 }
 
 
@@ -695,20 +662,6 @@ void C64Display::PollKeyboard(uint8 *key_matrix, uint8 *rev_matrix, uint8 *joyst
 						break;
 				}
 			}
-
-			case FocusIn:
-				if (auto_rep) {
-					XAutoRepeatOff(display);
-					auto_rep = false;
-				}
-				break;
-
-			case FocusOut:
-				if (!auto_rep) {
-					XAutoRepeatOn(display);
-					auto_rep = true;
-				}
-				break;
 		}
 	}
 	*joystick = joystate;

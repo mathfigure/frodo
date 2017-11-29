@@ -79,6 +79,8 @@ private:
 #ifdef __unix
 	void draw_led(int num, int state);	// Draw one LED
 	static void pulse_handler(...);		// LED error blinking
+	static void pulse_handler_init(C64Display *disp);	// LED error blinking init
+	static void pulse_handler_free();			// LED error blinking free
 #endif
 
 #ifdef WIN32

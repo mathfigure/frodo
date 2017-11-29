@@ -40,11 +40,6 @@ static SDL_Surface *screen = NULL;
 // Keyboard
 static bool num_locked = false;
 
-// For LED error blinking
-static C64Display *c64_disp;
-static struct sigaction pulse_sa;
-static itimerval pulse_tv;
-
 // SDL joysticks
 static SDL_Joystick *joy[2] = {NULL, NULL};
 
@@ -308,17 +303,7 @@ C64Display::C64Display(C64 *the_c64) : TheC64(the_c64)
 	for (int i=0; i<4; i++)
 		led_state[i] = old_led_state[i] = LED_OFF;
 
-	// Start timer for LED error blinking
-	c64_disp = this;
-	pulse_sa.sa_handler = (void (*)(int))pulse_handler;
-	pulse_sa.sa_flags = SA_RESTART;
-	sigemptyset(&pulse_sa.sa_mask);
-	sigaction(SIGALRM, &pulse_sa, NULL);
-	pulse_tv.it_interval.tv_sec = 0;
-	pulse_tv.it_interval.tv_usec = 400000;
-	pulse_tv.it_value.tv_sec = 0;
-	pulse_tv.it_value.tv_usec = 400000;
-	setitimer(ITIMER_REAL, &pulse_tv, NULL);
+	pulse_handler_init(this);
 }
 
 
@@ -328,15 +313,8 @@ C64Display::C64Display(C64 *the_c64) : TheC64(the_c64)
 
 C64Display::~C64Display()
 {
-	pulse_tv.it_interval.tv_sec = 0;
-	pulse_tv.it_interval.tv_usec = 0;
-	pulse_tv.it_value.tv_sec = 0;
-	pulse_tv.it_value.tv_usec = 0;
-	setitimer(ITIMER_REAL, &pulse_tv, NULL);
-
+	pulse_handler_free();
 	SDL_Quit();
-
-	c64_disp = NULL;
 }
 
 
@@ -460,24 +438,6 @@ void C64Display::draw_string(SDL_Surface *s, int x, int y, const char *str, uint
 		}
 		pb += 8;
 	}
-}
-
-
-/*
- *  LED error blink
- */
-
-void C64Display::pulse_handler(...)
-{
-	for (int i=0; i<4; i++)
-		switch (c64_disp->led_state[i]) {
-			case LED_ERROR_ON:
-				c64_disp->led_state[i] = LED_ERROR_OFF;
-				break;
-			case LED_ERROR_OFF:
-				c64_disp->led_state[i] = LED_ERROR_ON;
-				break;
-		}
 }
 
 
